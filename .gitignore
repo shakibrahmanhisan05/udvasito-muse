@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+# Secrets — never commit (CLAUDE.md rule 18)
+.env
+.env.local
+.env*.local
+!.env.example
+# Misc
+.DS_Store
+*.pem
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+# Testing / coverage
+coverage/
+test-results/
+playwright-report/
+# Sentry
+.sentryclirc
+# Local generated
+src/content/generated/
