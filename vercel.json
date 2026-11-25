@@ -1,0 +1,41 @@
+{
+  "buildCommand": "npx convex deploy --cmd-url-env-var-name EXPO_PUBLIC_CONVEX_URL --cmd \"npx expo export --platform web\"",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/r/:slug",
+      "destination": "/api/r/:slug"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self), geolocation=(self)"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://tiles.openfreemap.org; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' https://*.convex.cloud https://*.convex.site https://accounts.google.com https://*.sentry.io https://tiles.openfreemap.org https://openfreemap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        }
+      ]
+    }
+  ]
+}
