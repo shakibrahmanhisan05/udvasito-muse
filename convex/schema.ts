@@ -112,8 +112,7 @@ export default defineSchema({
     status: v.union(v.literal("pending"), v.literal("verified"), v.literal("mismatch"), v.literal("expired")),
     verifiedPhone: v.optional(v.string()),
     externalUserId: v.optional(v.string()),       // Telegram user id / WhatsApp wa_id
-  }).index("by_token", ["token"]).index("by_code", ["code"]).index("by_profile", ["profileId"])
-    .index("by_externalUserId", ["externalUserId", "status"]),
+  }).index("by_token", ["token"]).index("by_code", ["code"]).index("by_profile", ["profileId"]),
 
   blocks: defineTable({ blockerId: v.id("profiles"), blockedId: v.id("profiles") })
     .index("by_blocker", ["blockerId"]).index("by_pair", ["blockerId", "blockedId"]),
