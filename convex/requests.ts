@@ -1,6 +1,8 @@
 import { makeFunctionReference } from "convex/server";
+import type { GenericMutationCtx } from "convex/server";
+import type { DataModel, Doc, Id } from "./schemaTypes";
 import { v } from "convex/values";
-import { memberMutationV, memberQueryV } from "./_lib/auth";
+import { memberMutationV, memberQueryV, ownerViewQueryV } from "./_lib/auth";
 import { fail } from "./_lib/errors";
 import { getRulesSettings, getSetting } from "./_lib/settings";
 import { recordEvent } from "./_lib/events";
@@ -10,7 +12,8 @@ import { eqRange } from "./_lib/db";
 import { canCreateRequest } from "./rules/limits";
 import { containsMoneyWord, normalisePhone, validateRequestForm } from "./rules/validation";
 import { haversineKm } from "./rules/ranking";
-import { allResponses } from "./matching";
+import { pruneNoShows } from "./rules/alertPolicy";
+import { allResponses, promoteStandbyOrWave } from "./matching";
 import { component, lang, requestGroup } from "./schema";
 
 /**
@@ -19,6 +22,21 @@ import { component, lang, requestGroup } from "./schema";
  */
 
 const startRequestRef = makeFunctionReference<"mutation">("matching:startRequest");
+const autoCloseRef = makeFunctionReference<"mutation">("lifecycle:autoClose");
+
+/** Arm the S-17 auto-close for a request (idempotent — see lifecycle). */
+async function scheduleAutoClose(
+  ctx: GenericMutationCtx<DataModel>,
+  requestId: Id<"requests">,
+  neededBy: number,
+) {
+  const afterHours = await getSetting<number>(ctx, "autoCloseAfterNeededHours");
+  await ctx.scheduler.runAfter(
+    Math.max(0, neededBy + afterHours * 3_600_000 - Date.now()),
+    autoCloseRef,
+    { requestId },
+  );
+}
 
 const SLUG_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
 function randomSlug(): string {
@@ -237,12 +255,14 @@ export const create = memberMutationV({
       isDemo: ctx.profile.isDemo,
     });
     await ctx.scheduler.runAfter(0, startRequestRef, { requestId });
+    await scheduleAutoClose(ctx, requestId, args.neededBy);
     return { requestId, existing: false };
   },
 });
 
-/** requests.getForOwner 📞 (specs §6.2) — SCR-M03 live status. */
-export const getForOwner = memberQueryV({
+/** requests.getForOwner 📞 (specs §6.2) — SCR-M03 live status. Frozen and
+ * suspended owners keep this read-only view (gate G6); writes stay shut. */
+export const getForOwner = ownerViewQueryV({
   args: { requestId: v.id("requests") },
   handler: async (ctx, args) => {
     const request = await ctx.db.get(args.requestId);
@@ -453,6 +473,147 @@ export const close = memberMutationV({
       props: { reason: args.reason },
       isDemo: req.isDemo,
     });
+    return null;
+  },
+});
+
+/** requests.update (specs §6.2, F-501) — owner edits units/needed-by/note. */
+export const update = memberMutationV({
+  args: {
+    requestId: v.id("requests"),
+    unitsNeeded: v.optional(v.number()),
+    neededBy: v.optional(v.number()),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.requestId);
+    if (
+      !request ||
+      request!.requesterId !== ctx.profile._id ||
+      request!.isDemo !== ctx.profile.isDemo
+    ) {
+      fail("ERR_NOT_FOUND");
+    }
+    const req = request!;
+    if (req.status === "closed") fail("ERR_REQUEST_CLOSED");
+    if (
+      args.unitsNeeded !== undefined &&
+      (!Number.isInteger(args.unitsNeeded) || args.unitsNeeded < 1 || args.unitsNeeded > 10)
+    ) {
+      fail("ERR_VALIDATION", {}, "unitsNeeded");
+    }
+    const patch: Partial<Doc<"requests">> = {};
+    if (args.unitsNeeded !== undefined) patch.unitsNeeded = args.unitsNeeded;
+    if (args.note !== undefined) patch.note = args.note;
+    if (args.neededBy !== undefined) {
+      patch.neededBy = args.neededBy;
+      patch.urgency = deriveUrgency(args.neededBy, Date.now());
+    }
+    await ctx.db.patch(req._id, patch);
+    await recordEvent(ctx, "request_updated", {
+      requestId: req._id,
+      actorRole: ctx.profile.role,
+      props: {
+        units: args.unitsNeeded !== undefined,
+        neededBy: args.neededBy !== undefined,
+        text: args.note !== undefined,
+      },
+      isDemo: req.isDemo,
+    });
+    if (args.neededBy !== undefined) {
+      await scheduleAutoClose(ctx, req._id, args.neededBy);
+    }
+    // Need-more while covered (F-501): back to live and fill the new
+    // slots at once — standby first, then the next wave.
+    if (
+      args.unitsNeeded !== undefined &&
+      args.unitsNeeded > req.unitsNeeded &&
+      req.status === "covered"
+    ) {
+      const fresh = await ctx.db.get(req._id);
+      if (fresh) await promoteStandbyOrWave(ctx, fresh);
+    }
+    return null;
+  },
+});
+
+/** requests.reopen (specs §6.2, F-501) — within S-34 of closing. */
+export const reopen = memberMutationV({
+  args: { requestId: v.id("requests") },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.requestId);
+    if (
+      !request ||
+      request!.requesterId !== ctx.profile._id ||
+      request!.isDemo !== ctx.profile.isDemo
+    ) {
+      fail("ERR_NOT_FOUND");
+    }
+    const req = request!;
+    if (req.status !== "closed") fail("ERR_VALIDATION", {}, "requestId");
+    const windowHours = await getSetting<number>(ctx, "reopenWindowHours");
+    if (!req.closedAt || Date.now() - req.closedAt > windowHours * 3_600_000) {
+      fail("ERR_REQUEST_CLOSED");
+    }
+    await ctx.db.patch(req._id, {
+      status: "live",
+      closeReason: undefined,
+      closedAt: undefined,
+      wave: 0,
+      escalatedAt: undefined,
+      fallbackShown: false,
+    });
+    await recordEvent(ctx, "request_reopened", {
+      requestId: req._id,
+      actorRole: ctx.profile.role,
+      isDemo: req.isDemo,
+    });
+    // startRequest re-runs wave 1 for donors not yet notified (specs §6.2).
+    await ctx.scheduler.runAfter(0, startRequestRef, { requestId: req._id });
+    await scheduleAutoClose(ctx, req._id, req.neededBy);
+    return null;
+  },
+});
+
+/**
+ * requests.markDonorNotResponding (specs §6.2, F-406): the requester
+ * marks a confirmed donor as not responding. The donor takes a no-show
+ * mark (S-37, ranking only), a standby is confirmed in their place, or
+ * matching restarts with the next wave at once.
+ */
+export const markDonorNotResponding = memberMutationV({
+  args: { requestId: v.id("requests"), responseId: v.id("responses") },
+  handler: async (ctx, args) => {
+    const request = await ctx.db.get(args.requestId);
+    if (
+      !request ||
+      request!.requesterId !== ctx.profile._id ||
+      request!.isDemo !== ctx.profile.isDemo
+    ) {
+      fail("ERR_NOT_FOUND");
+    }
+    const req = request!;
+    const response = await ctx.db.get(args.responseId);
+    if (!response || response!.requestId !== req._id) fail("ERR_NOT_FOUND");
+    if (response!.state !== "confirmed") fail("ERR_VALIDATION", {}, "responseId");
+    await ctx.db.patch(response!._id, { state: "not_responding" });
+    const settings = await getRulesSettings(ctx);
+    const donor = await ctx.db.get(response!.donorProfileId);
+    if (donor) {
+      const now = Date.now();
+      await ctx.db.patch(donor._id, {
+        noShowAt: [...pruneNoShows(donor.noShowAt, now, settings.noShowPenalty.days), now],
+      });
+    }
+    await recordEvent(ctx, "donor_not_responding", {
+      requestId: req._id,
+      actorRole: ctx.profile.role,
+      isDemo: req.isDemo,
+    });
+    if (req.status !== "closed") {
+      const fresh = await ctx.db.get(req._id);
+      if (fresh) await promoteStandbyOrWave(ctx, fresh);
+    }
     return null;
   },
 });
