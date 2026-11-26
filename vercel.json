@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx convex deploy --cmd-url-env-var-name EXPO_PUBLIC_CONVEX_URL --cmd \"npx expo export --platform web\"",
+  "buildCommand": "npm run content:build && npx convex deploy --cmd-url-env-var-name EXPO_PUBLIC_CONVEX_URL --cmd \"npx expo export --platform web\"",
   "outputDirectory": "dist",
   "rewrites": [
     {
