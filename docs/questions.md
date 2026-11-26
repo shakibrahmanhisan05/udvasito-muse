@@ -1,0 +1,6 @@
+# Questions for the developer (CLAUDE.md §3 — stop and ask, never invent)
+
+| Date | Phase | Question | Options | Recommendation |
+|---|---|---|---|---|
+| 2026-11-26 | P0 | Specs pin **Expo SDK 57**, but the newest stable `create-expo-app` now scaffolds **SDK 58** (React 19.3, RN 0.88). Build on 58 or force-install 57? | (a) SDK 58 — newest stable; (b) SDK 57 — exact spec compliance | **Resolved 2026-11-26 (QA fix D1): (b) SDK 57.** A scratch copy was aligned to SDK 57 (`expo install --fix` + `expo-speech-recognition@~57.1.0`) and the full suite passed (tsc ✅, Vitest ✅, ESLint ✅, `expo config` ✅), so the repo was downgraded to SDK 57 (expo ~57.0.0, RN 0.86.3, React 19.2.3). No ADR change needed; SDK 58 returns to its roadmap P7 "later" slot. |
+| 2026-11-26 | P0 | Places dataset (ADR-013): which candidate passes the licence + all-Chattogram-thana check? | Per ADR-013 candidates; member 2 checks on Day 2 | **Resolved 2026-11-26:** data workstream chose **nuhil/bangladesh-geocode** (MIT + CC BY-IGO + CC BY 4.0 layers); seeded with geoBoundaries/GeoNames thana gap-fill — see `docs/data-licences.md`. Open remainder for member 2: verify the 16 Bangla thana names + replace 2 district-point fallback coordinates (Akbarshah, Chawkbazar). |
