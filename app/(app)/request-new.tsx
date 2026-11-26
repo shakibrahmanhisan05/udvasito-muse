@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import {
   Banner,
   Button,
@@ -15,9 +15,14 @@ import {
 import { colors, radius, spacing, typography } from "@/theme/tokens";
 import { isAuthConfigured } from "@/lib/auth-client";
 import { refs } from "@/lib/refs";
-import { errorText } from "@/lib/errors";
+import { errorCode, errorText } from "@/lib/errors";
 import { getCurrentCoordsOnce } from "@/lib/geo";
 import { haversineKm } from "@/convex/rules/ranking";
+import { parseIntake, type IntakeFields } from "@/convex/rules/intakeParser";
+import { extractContactPhone } from "@/convex/rules/redaction";
+import { isVoiceAvailable, startListening, stopListening, voiceLangFor } from "@/lib/voice";
+import { outbox } from "@/lib/outbox";
+import { formatCount } from "@/lib/format";
 import type { Id } from "@/convex/_generated/dataModel";
 
 const GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -32,12 +37,15 @@ function dhakaEndOfToday(): number {
 }
 
 /**
- * SCR-M02 — Request blood, form path (F-301). Voice/AI/paste paths are P2.
- * Hospital search + "use my location" nearest (haversine) + "not in the
- * list" free-text path with place pickers. Server re-validates everything.
+ * SCR-M02 — Request blood (F-301 form + P4 quick intake: F-205 voice,
+ * F-206 free-text/paste with rules-first/AI-gap parsing, F-207 offline
+ * outbox). Hospital search + "use my location" nearest (haversine) +
+ * "not in the list" free-text path with place pickers. Server
+ * re-validates everything.
  */
 export default function RequestNew() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === "bn" ? "bn" : "en";
   const router = useRouter();
   const toast = useToast();
   const params = useLocalSearchParams<{ dengue?: string }>();
@@ -72,6 +80,196 @@ export default function RequestNew() {
   const clientId = () => {
     clientIdRef.current ??= `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
     return clientIdRef.current;
+  };
+
+  // ── P4: quick intake (F-205 voice, F-206 text/paste, F-207 outbox) ──
+  const parseAction = useAction(refs.intakeParse);
+  const refData = useQuery(refs.intakeRefData, isAuthConfigured ? {} : "skip");
+  const [quickText, setQuickText] = useState("");
+  const [filling, setFilling] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [voiceDown, setVoiceDown] = useState(false);
+  const [aiDown, setAiDown] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [aiFields, setAiFields] = useState<string[]>([]);
+  const [queued, setQueued] = useState(false);
+  const [intakeSource, setIntakeSource] = useState<"form" | "voice" | "text" | "paste">("form");
+  const [aiAssistedFlag, setAiAssistedFlag] = useState(false);
+  const voiceOk = useMemo(() => isVoiceAvailable(), []);
+
+  const fieldLabel = (field: string): string =>
+    ({
+      bloodGroup: t("request.bloodGroup"),
+      component: t("request.whatNeeded"),
+      units: t("request.units"),
+      hospitalId: t("request.hospital"),
+      neededBy: t("request.when"),
+      isDengue: t("request.dengue"),
+    })[field] ?? field;
+
+  /** The hospital half of a pre-fill: pick the hospital in the form
+   *  (the server re-validates; place ids only matter for the
+   *  not-in-list path). */
+  const applyHospital = (hospitalId: string) => {
+    const h = refData?.hospitals.find((x: { _id: string }) => x._id === hospitalId);
+    if (!h) return;
+    setHospitalId(h._id as Id<"hospitals">);
+    setHospitalText(lang === "bn" ? h.nameBn : h.nameEn);
+    setNotInList(false);
+  };
+
+  const applyUnits = (unitsValue: number, forComponent?: string | null) => {
+    const cap = (forComponent ?? component) === "platelets" ? 4 : 10;
+    setUnits(Math.min(cap, Math.max(1, unitsValue)));
+  };
+
+  /** Pre-fill from the on-device rules parse (F-1103: nothing is
+   *  posted by this — the member still presses Post). */
+  const applyLocal = (fields: IntakeFields) => {
+    if (fields.bloodGroup) setGroup(fields.bloodGroup);
+    if (fields.component) setComponent(fields.component);
+    if (fields.isDengue) {
+      setIsDengue(true);
+      setComponent("platelets");
+    }
+    if (fields.units) applyUnits(fields.units, fields.component);
+    if (fields.hospitalId) applyHospital(fields.hospitalId);
+    if (fields.neededByKind === "now") setWhen("now");
+    else if (fields.neededByKind === "today") setWhen("today");
+    else if (fields.neededByKind === "tomorrow") setWhen("tomorrow");
+    else if (fields.neededByKind === "datetime") setWhen("pick");
+  };
+
+  type ServerFields = {
+    bloodGroup?: string | null;
+    component?: "whole_blood" | "platelets" | null;
+    units?: number | null;
+    hospitalId?: string | null;
+    neededBy?: { kind: string; atMs?: number } | null;
+    isDengue?: boolean | null;
+  };
+
+  /** Pre-fill from the server parse (rules + AI gaps merged). */
+  const applyServer = (fields: ServerFields) => {
+    if (fields.bloodGroup) setGroup(fields.bloodGroup);
+    if (fields.component) setComponent(fields.component);
+    if (fields.isDengue) {
+      setIsDengue(true);
+      setComponent("platelets");
+    }
+    if (fields.units) applyUnits(fields.units, fields.component);
+    if (fields.hospitalId) applyHospital(fields.hospitalId);
+    if (fields.neededBy) {
+      switch (fields.neededBy.kind) {
+        case "now":
+          setWhen("now");
+          break;
+        case "today":
+        case "today_evening":
+          setWhen("today");
+          break;
+        case "tomorrow":
+        case "tomorrow_morning":
+        case "tomorrow_evening":
+          setWhen("tomorrow");
+          break;
+        case "datetime":
+          setWhen("pick");
+          if (fields.neededBy.atMs) {
+            setPickDate(
+              new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(
+                new Date(fields.neededBy.atMs),
+              ),
+            );
+          }
+          break;
+      }
+    }
+  };
+
+  /**
+   * "Fill the form" (F-206): rules parse on-device first; the server
+   * action (rules → redacted Gemini for gaps only) runs only when a
+   * required field is still missing. Fields the server found that
+   * local rules did not are the AI's — shown as "AI suggested" chips.
+   * The contact number comes from regex on the member's own text,
+   * never from the AI.
+   */
+  const fillForm = async () => {
+    const text = quickText.trim();
+    if (text.length < 5 || filling) return;
+    setFilling(true);
+    setAiDown(false);
+    setAiNote(null);
+    setAiFields([]);
+    const local: IntakeFields | null = refData
+      ? parseIntake(text, lang, refData).fields
+      : null;
+    const localPhone = extractContactPhone(text);
+    if (localPhone) setContactPhone(localPhone);
+    if (local?.bloodGroup && local?.units && local?.hospitalId) {
+      applyLocal(local);
+      setFilling(false);
+      return;
+    }
+    try {
+      const res = (await parseAction({ text, clientId: clientId() })) as {
+        fields: ServerFields;
+        missing: string[];
+        aiUsed: boolean;
+        aiError?: string;
+        extractedPhone?: string;
+      };
+      applyServer(res.fields);
+      if (res.extractedPhone) setContactPhone(res.extractedPhone);
+      const localHas = (serverKey: string): boolean => {
+        if (!local) return false;
+        const localKey = serverKey === "neededBy" ? "neededByKind" : serverKey;
+        return local[localKey as keyof IntakeFields] != null;
+      };
+      const aiKeys = ["bloodGroup", "component", "units", "hospitalId", "neededBy", "isDengue"]
+        .filter((k) => {
+          const v = res.fields[k as keyof ServerFields];
+          return v !== null && v !== undefined && !localHas(k);
+        });
+      setAiFields(aiKeys.map(fieldLabel));
+      if (res.aiUsed) {
+        setAiAssistedFlag(true);
+        if (aiKeys.length > 0) {
+          setAiNote(t("request.aiFilled", { count: aiKeys.length }));
+        }
+      }
+      if (res.aiError) setAiDown(true);
+      if (res.missing.length > 0) {
+        setAiNote(t("request.aiMissing", { fields: res.missing.map(fieldLabel).join(", ") }));
+      }
+    } catch {
+      // Offline or action unreachable: local rules still fill what
+      // they can, the member's text stays in the box (F-902).
+      if (local) applyLocal(local);
+      setAiDown(true);
+    } finally {
+      setFilling(false);
+    }
+  };
+
+  const speak = async () => {
+    if (listening) {
+      stopListening();
+      setListening(false);
+      return;
+    }
+    setVoiceDown(false);
+    const ok = await startListening(voiceLangFor(lang), {
+      onTranscript: (text) => {
+        setQuickText(text);
+        setIntakeSource("voice");
+      },
+      onError: () => setVoiceDown(true),
+      onEnd: () => setListening(false),
+    });
+    if (ok) setListening(true);
+    else setVoiceDown(true);
   };
 
   type HospitalRow = { _id: Id<"hospitals">; nameEn: string; lat: number; lng: number };
@@ -118,30 +316,42 @@ export default function RequestNew() {
     setBusy(true);
     setError(null);
     void (async () => {
+      const args = {
+        clientId: clientId(),
+        bloodGroup: group as never,
+        component,
+        isDengue,
+        unitsNeeded: units,
+        hospitalId: hospitalId ?? undefined,
+        divisionId: place.divisionId ?? undefined,
+        districtId: place.districtId ?? undefined,
+        upazilaId: place.upazilaId ?? undefined,
+        placeText: notInList ? placeText.trim() : undefined,
+        neededBy: neededBy(),
+        contactPhone: phone.trim(),
+        patientName: patientName.trim() || undefined,
+        ward: ward.trim() || undefined,
+        note: note.trim() || undefined,
+        source: intakeSource,
+        aiAssisted: aiAssistedFlag,
+      };
       try {
-        const result = await create({
-          clientId: clientId(),
-          bloodGroup: group as never,
-          component,
-          isDengue,
-          unitsNeeded: units,
-          hospitalId: hospitalId ?? undefined,
-          divisionId: place.divisionId ?? undefined,
-          districtId: place.districtId ?? undefined,
-          upazilaId: place.upazilaId ?? undefined,
-          placeText: notInList ? placeText.trim() : undefined,
-          neededBy: neededBy(),
-          contactPhone: phone.trim(),
-          patientName: patientName.trim() || undefined,
-          ward: ward.trim() || undefined,
-          note: note.trim() || undefined,
-          source: "form",
-          aiAssisted: false,
-        });
+        const result = await create(args);
+        await outbox.remove(args.clientId).catch(() => {});
         if (result.existing) toast.show(t("request.duplicate"));
         router.replace({ pathname: "/(app)/request-live", params: { id: result.requestId } });
       } catch (e) {
-        setError(errorText(t, e));
+        if (errorCode(e) === null) {
+          // No app error code: the post never reached the server
+          // (offline). Queue it in the outbox — it posts itself on
+          // reconnect and the server dedupes by clientId (F-207).
+          await outbox
+            .enqueue({ clientId: args.clientId, payload: args, queuedAt: Date.now() })
+            .catch(() => {});
+          setQueued(true);
+        } else {
+          setError(errorText(t, e));
+        }
       } finally {
         setBusy(false);
       }
@@ -154,6 +364,57 @@ export default function RequestNew() {
         {t("request.new")}
       </Text>
       {error ? <Banner kind="error" icon="⚠" text={error} /> : null}
+      {queued ? <Banner kind="warning" icon="⏳" text={t("common.waitingNetwork")} /> : null}
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t("request.quick")}</Text>
+        <FieldLabel>{t("request.writeLabel")}</FieldLabel>
+        <TextInput
+          accessibilityLabel={t("request.writeLabel")}
+          style={[styles.input, styles.textarea]}
+          value={quickText}
+          onChangeText={(text) => {
+            setQuickText((prev) => {
+              if (intakeSource === "form") {
+                setIntakeSource(text.length - prev.length > 25 ? "paste" : "text");
+              }
+              return text;
+            });
+          }}
+          placeholder={t("request.writePlaceholder")}
+          placeholderTextColor={colors.text.muted}
+          multiline
+        />
+        <Text style={styles.help}>{t("request.aiNotice")}</Text>
+        <View style={styles.row}>
+          {voiceOk ? (
+            <Button
+              label={listening ? t("request.listening") : t("request.speak")}
+              variant="secondary"
+              onPress={() => void speak()}
+            />
+          ) : null}
+          <Button
+            label={t("request.fillForm")}
+            onPress={() => void fillForm()}
+            disabled={filling || quickText.trim().length < 5}
+            loading={filling}
+          />
+        </View>
+        {listening ? <Text style={styles.help}>{t("request.listening")}</Text> : null}
+        {voiceDown ? <Text style={styles.help}>{t("request.voiceUnavailable")}</Text> : null}
+        {aiDown ? <Banner kind="warning" icon="⚠" text={t("request.aiUnavailable")} /> : null}
+        {aiNote ? <Text style={styles.help}>{aiNote}</Text> : null}
+        {aiFields.length > 0 ? (
+          <View style={styles.chipWrap}>
+            {aiFields.map((label) => (
+              <View key={label} style={styles.aiChip}>
+                <Text style={styles.aiChipText}>{`${label} · ${t("common.aiSuggested")}`}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
 
       <FieldLabel>{t("request.bloodGroup")}</FieldLabel>
       <ChipRow
@@ -196,7 +457,7 @@ export default function RequestNew() {
       <FieldLabel>{t("request.units")}</FieldLabel>
       <View style={styles.stepper}>
         <Button label={MINUS} variant="secondary" onPress={() => setUnits((u) => Math.max(1, u - 1))} />
-        <Text style={styles.unitsText}>{t(units === 1 ? "units_one" : "units_other", { count: units })}</Text>
+        <Text style={styles.unitsText}>{t(units === 1 ? "units_one" : "units_other", { count: formatCount(units, lang) })}</Text>
         <Button
           label={PLUS}
           variant="secondary"
@@ -361,6 +622,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.surface,
     borderRadius: radius.input,
   },
+  card: {
+    backgroundColor: colors.bg.surface,
+    borderRadius: radius.card,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  cardTitle: { ...typography.heading, color: colors.text.primary },
+  textarea: { minHeight: 96, textAlignVertical: "top", paddingVertical: spacing.sm },
+  row: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
+  chipWrap: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
+  aiChip: {
+    backgroundColor: colors.brand.primarySoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  aiChipText: { ...typography.small, color: colors.text.primary },
   stepper: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
   unitsText: { ...typography.heading, color: colors.text.primary },
   checkRow: { flexDirection: "row", gap: spacing.sm, alignItems: "center", minHeight: 48 },

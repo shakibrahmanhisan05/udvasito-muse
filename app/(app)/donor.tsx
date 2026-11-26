@@ -133,6 +133,11 @@ export default function Donor() {
         variant="ghost"
         onPress={() => router.push("/(app)/alerts")}
       />
+      <Button
+        label={t("alertGuide.title")}
+        variant="ghost"
+        onPress={() => router.push("/(app)/donor/alert-guide")}
+      />
     </ScrollView>
   );
 }
