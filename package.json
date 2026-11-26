@@ -24,6 +24,7 @@
     "intake:eval": "tsx scripts/intake-eval.ts"
   },
   "dependencies": {
+    "@better-auth/expo": "~1.7.28",
     "@convex-dev/better-auth": "^0.13.1",
     "@convex-dev/expo-push-notifications": "^0.4.3",
     "@convex-dev/rate-limiter": "^0.4.3",
