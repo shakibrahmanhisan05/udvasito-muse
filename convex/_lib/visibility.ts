@@ -1,4 +1,4 @@
-import type { GenericMutationCtx } from "convex/server";
+import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import type { DataModel, Doc, Id } from "../schemaTypes";
 import { writeAudit } from "./audit";
 import { fail } from "./errors";
@@ -36,9 +36,13 @@ export async function recordContactReveal(
     viewer: Profile;
     subject: Profile;
     subjectRole: "donor" | "requester" | "volunteer";
-    requestId: Id<"requests">;
+    /** Optional since P3: an admin person-level reveal (F-805) has no
+     * request context; every request-scoped reveal still passes it. */
+    requestId?: Id<"requests">;
     reason: RevealReason;
     reasonText?: string;
+    /** §6.9 action name; defaults to the generic `contact_revealed`. */
+    auditAction?: string;
     expiresAt: number;
     isDemo: boolean;
   },
@@ -64,7 +68,7 @@ export async function recordContactReveal(
   });
   await writeAudit(ctx, {
     actor: args.viewer,
-    action: "contact_revealed",
+    action: args.auditAction ?? "contact_revealed",
     targetType: "profiles",
     targetId: args.subject._id,
     reason: args.reasonText ?? args.reason,
@@ -95,4 +99,33 @@ export async function recordContactReveal(
     }
   }
   return args.subject.phone;
+}
+
+/**
+ * S-23 (PRD §5.8): how many numbers a requester has RECEIVED so far
+ * today (Asia/Dhaka) across every reveal where they are the viewer.
+ * Shared by every donor→requester reveal path — accept (responses.ts)
+ * and standby promotions (matching.ts) alike, so no path can push a
+ * requester past the daily cap (P2 review finding S3-F1).
+ */
+export async function requesterRevealsToday(
+  ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>,
+  requesterId: Id<"profiles">,
+  now: number,
+): Promise<number> {
+  const rows = await ctx.db
+    .query("contactReveals")
+    .withIndex("by_viewer_request", eqRange([["viewerId", requesterId]]))
+    .collect();
+  return rows.filter((r) => r._creationTime >= startOfDhakaDay(now)).length;
+}
+
+/** True when one more reveal TO this requester still fits under S-23. */
+export async function requesterUnderRevealCap(
+  ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>,
+  requesterId: Id<"profiles">,
+  now: number,
+): Promise<boolean> {
+  const cap = await getSetting<number>(ctx, "revealsPerRequesterPerDay");
+  return (await requesterRevealsToday(ctx, requesterId, now)) < cap;
 }
