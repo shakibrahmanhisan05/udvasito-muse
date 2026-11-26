@@ -79,6 +79,11 @@ export default function AppLayout() {
       <Tabs.Screen name="alert-detail" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="verify-in-person" options={{ href: null }} />
+      <Tabs.Screen name="volunteer-apply" options={{ href: null }} />
+      <Tabs.Screen name="volunteer-request" options={{ href: null }} />
+      <Tabs.Screen name="admin-people" options={{ href: null }} />
+      <Tabs.Screen name="admin-person" options={{ href: null }} />
+      <Tabs.Screen name="my-data" options={{ href: null }} />
     </Tabs>
   );
 }

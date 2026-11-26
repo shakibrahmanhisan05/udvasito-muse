@@ -17,7 +17,7 @@ export default function More() {
   const session = authClient.useSession();
   const me = useQuery(refs.me, isAuthConfigured ? {} : "skip");
   const canVerify =
-    me?.role === "volunteer" || me?.role === "admin" || me?.role === "super_admin";
+    me?.role === "volunteer" || me?.role === "admin" || me?.role === "superadmin";
 
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
@@ -40,6 +40,13 @@ export default function More() {
             label={t("verifyInPerson.title")}
             variant="secondary"
             onPress={() => router.push("/(app)/verify-in-person")}
+          />
+        ) : null}
+        {me?.role === "admin" || me?.role === "superadmin" ? (
+          <Button
+            label={t("admin.people")}
+            variant="secondary"
+            onPress={() => router.push("/(app)/admin-people")}
           />
         ) : null}
         <Button
