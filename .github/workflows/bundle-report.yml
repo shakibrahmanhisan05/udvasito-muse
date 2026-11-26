@@ -1,11 +1,14 @@
 name: bundle-report
 
 # X03 (specs §7.1): export the production web bundle and measure the
-# entry chunk against the 600 KB gzip budget. This job is EXPECTED
-# to fail until route-level code splitting lands (P7) — the P6
-# measurement is 1,161,940 B gzip in a single bundle; see
-# docs/dev/P6-REPORT.md. It is deliberately not a required status
-# check yet; it exists so every PR shows the real number.
+# initial shell against the 600 KB gzip budget. P6 measured a single
+# entry bundle at 1,161,418 B gzip (over budget). P7 enabled Expo
+# Router async routes (route-based splitting) plus lazy Sentry/push
+# and zod-locale pruning; scripts/measure-bundle.mjs now measures the
+# first-screen total (index.html scripts + root-layout chunk + the
+# `/` route chunk) — see docs/dev/P7-REPORT.md for the numbers. It is
+# deliberately not a required status check yet; it exists so every PR
+# shows the real number.
 on:
   pull_request:
     branches: [main]
@@ -24,5 +27,5 @@ jobs:
       - run: npm ci
       - name: Production web export
         run: npm run build:web
-      - name: Measure entry bundle (gzip)
+      - name: Measure initial shell (gzip)
         run: node scripts/measure-bundle.mjs

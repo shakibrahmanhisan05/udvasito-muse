@@ -28,6 +28,32 @@ jobs:
         # (webServer: npm run web) on port 8081.
         run: npx playwright test tests/e2e/a11y.spec.ts
 
+  a11y-auth:
+    name: axe accessibility (authenticated, practice sign-in)
+    # Same gate as the smoke job: runs the signed-in axe pass from
+    # tests/e2e/a11y.spec.ts against the deployed practice area.
+    if: vars.E2E_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run authenticated axe pass against the deployed practice area
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_PRACTICE_ID: ${{ secrets.E2E_PRACTICE_ID }}
+          E2E_PRACTICE_PIN: ${{ secrets.E2E_PRACTICE_PIN }}
+          E2E_DONOR_ID: ${{ secrets.E2E_DONOR_ID }}
+          E2E_DONOR_PIN: ${{ secrets.E2E_DONOR_PIN }}
+          E2E_ADMIN_ID: ${{ secrets.E2E_ADMIN_ID }}
+          E2E_ADMIN_PIN: ${{ secrets.E2E_ADMIN_PIN }}
+        run: npx playwright test tests/e2e/a11y.spec.ts --grep "authenticated"
+
   smoke:
     name: practice-area smoke (post → match → accept)
     # Skips cleanly until the team sets E2E_ENABLED=true (repo
