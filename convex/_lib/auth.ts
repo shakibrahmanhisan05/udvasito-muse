@@ -125,3 +125,81 @@ export const superadminMutation = roleMutation(["superadmin"]);
 
 /** Donor functions additionally require a live donor profile (checked in P1 donors.ts). */
 export const donorMutation = memberMutation;
+
+// ── Validator-typed variants (P1) ────────────────────────────────────
+// The wrappers above predate codegen-era typing: their handler receives
+// the *validator* types. These variants take a validators record and hand
+// the handler the inferred *value* types (ObjectType), with the same
+// sign-in → active → role enforcement. New functions should use these.
+import type { GenericValidator, ObjectType } from "convex/values";
+
+type Validators = Record<string, GenericValidator>;
+
+export function memberQueryV<Args extends Validators, Output>(config: {
+  args: Args;
+  handler: Handler<GenericQueryCtx<DataModel>, ObjectType<Args>, Output>;
+}) {
+  return queryGeneric({
+    args: config.args as never,
+    handler: async (ctx, args) => {
+      const profile = await requireAuthProfile(ctx);
+      assertActive(profile);
+      return config.handler(Object.assign(ctx, { profile }), args as ObjectType<Args>);
+    },
+  });
+}
+
+export function memberMutationV<Args extends Validators, Output>(config: {
+  args: Args;
+  handler: Handler<GenericMutationCtx<DataModel>, ObjectType<Args>, Output>;
+}) {
+  return mutationGeneric({
+    args: config.args as never,
+    handler: async (ctx, args) => {
+      const profile = await requireAuthProfile(ctx);
+      assertActive(profile);
+      return config.handler(Object.assign(ctx, { profile }), args as ObjectType<Args>);
+    },
+  });
+}
+
+function roleMutationV(roles: Role[]) {
+  return function <Args extends Validators, Output>(config: {
+    args: Args;
+    handler: Handler<GenericMutationCtx<DataModel>, ObjectType<Args>, Output>;
+  }) {
+    return mutationGeneric({
+      args: config.args as never,
+      handler: async (ctx, args) => {
+        const profile = await requireAuthProfile(ctx);
+        assertActive(profile);
+        assertRole(profile, roles);
+        return config.handler(Object.assign(ctx, { profile }), args as ObjectType<Args>);
+      },
+    });
+  };
+}
+
+function roleQueryV(roles: Role[]) {
+  return function <Args extends Validators, Output>(config: {
+    args: Args;
+    handler: Handler<GenericQueryCtx<DataModel>, ObjectType<Args>, Output>;
+  }) {
+    return queryGeneric({
+      args: config.args as never,
+      handler: async (ctx, args) => {
+        const profile = await requireAuthProfile(ctx);
+        assertActive(profile);
+        assertRole(profile, roles);
+        return config.handler(Object.assign(ctx, { profile }), args as ObjectType<Args>);
+      },
+    });
+  };
+}
+
+export const volunteerQueryV = roleQueryV(["volunteer", "admin", "superadmin"]);
+export const volunteerMutationV = roleMutationV(["volunteer", "admin", "superadmin"]);
+export const adminQueryV = roleQueryV(["admin", "superadmin"]);
+export const adminMutationV = roleMutationV(["admin", "superadmin"]);
+export const donorMutationV = memberMutationV;
+export const donorQueryV = memberQueryV;
