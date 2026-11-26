@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMutation, useQuery } from "convex/react";
 import { Banner, Button, ErrorState, HelplineButton, SafetyCard, Sheet, Skeleton } from "@/components";
@@ -26,7 +26,14 @@ export default function RequestLive() {
     refs.requestsGetForOwner,
     isAuthConfigured && params.id ? { requestId: params.id as Id<"requests"> } : "skip",
   );
+  const router = useRouter();
   const close = useMutation(refs.requestsClose);
+  const markNotResponding = useMutation(refs.requestsMarkDonorNotResponding);
+  const updateRequest = useMutation(refs.requestsUpdate);
+  const reopenRequest = useMutation(refs.requestsReopen);
+  const [notResponding, setNotResponding] = useState<{ responseId: string; name: string } | null>(
+    null,
+  );
   const [confirmClose, setConfirmClose] = useState<"fulfilled" | "not_needed" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,9 +81,30 @@ export default function RequestLive() {
 
       {data.confirmedDonors.length > 0 ? (
         <View style={styles.card}>
-          {data.confirmedDonors.map((donor: { responseId: string; firstName: string; callMode: string; phone?: string }) => (
+          {data.confirmedDonors.map((donor: { responseId: string; donorAuthUserId?: string; firstName: string; callMode: string; phone?: string }) => (
             <View key={donor.responseId} style={styles.personRow}>
               <Text style={styles.personName}>{donor.firstName}</Text>
+              {isOpen ? (
+                <Button
+                  label={t("request.donorNotResponding")}
+                  variant="ghost"
+                  onPress={() =>
+                    setNotResponding({ responseId: donor.responseId, name: donor.firstName })
+                  }
+                />
+              ) : null}
+              {donor.donorAuthUserId ? (
+                <Button
+                  label={t("report.title")}
+                  variant="ghost"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(app)/report",
+                      params: { subject: donor.donorAuthUserId as string, requestId: request._id },
+                    })
+                  }
+                />
+              ) : null}
               {donor.callMode === "donor_calls" ? (
                 <Text style={styles.body}>{t("contact.donorWillCall", { name: donor.firstName })}</Text>
               ) : donor.phone ? (
@@ -144,6 +172,23 @@ export default function RequestLive() {
 
       {isOpen ? (
         <View style={styles.card}>
+          <Button
+            label={t("confirm.title")}
+            variant="secondary"
+            onPress={() =>
+              router.push({ pathname: "/(app)/confirm", params: { id: request._id } })
+            }
+          />
+          <Button
+            label={t("request.needMore")}
+            variant="secondary"
+            onPress={() =>
+              void updateRequest({
+                requestId: request._id,
+                unitsNeeded: Math.min(4, request.unitsNeeded + 1),
+              }).catch((e: unknown) => setError(errorText(t, e)))
+            }
+          />
           <Button label={t("request.markFulfilled")} onPress={() => setConfirmClose("fulfilled")} />
           <Button
             label={t("request.notNeeded")}
@@ -152,8 +197,55 @@ export default function RequestLive() {
           />
         </View>
       ) : (
-        <Banner kind="info" icon="ℹ" text={t("request.closed")} />
+        <View style={styles.card}>
+          <Banner kind="info" icon="ℹ" text={t("request.closed")} />
+          <Button
+            label={t("confirm.title")}
+            variant="secondary"
+            onPress={() =>
+              router.push({ pathname: "/(app)/confirm", params: { id: request._id } })
+            }
+          />
+          <Button
+            label={t("request.reopen")}
+            variant="ghost"
+            onPress={() =>
+              void reopenRequest({ requestId: request._id }).catch((e: unknown) =>
+                setError(errorText(t, e)),
+              )
+            }
+          />
+        </View>
       )}
+
+      <Sheet
+        visible={notResponding !== null}
+        title={t("request.donorNotResponding")}
+        onClose={() => setNotResponding(null)}
+      >
+        <Text style={styles.body}>
+          {t("request.donorNotRespondingConfirm", { name: notResponding?.name ?? "" })}
+        </Text>
+        <Button
+          label={t("request.donorNotResponding")}
+          variant="danger"
+          onPress={() => {
+            if (!notResponding) return;
+            void (async () => {
+              try {
+                await markNotResponding({
+                  requestId: request._id,
+                  responseId: notResponding.responseId as Id<"responses">,
+                });
+                setNotResponding(null);
+              } catch (e) {
+                setError(errorText(t, e));
+              }
+            })();
+          }}
+        />
+        <Button label={t("common.cancel")} variant="ghost" onPress={() => setNotResponding(null)} />
+      </Sheet>
 
       <Sheet
         visible={confirmClose !== null}

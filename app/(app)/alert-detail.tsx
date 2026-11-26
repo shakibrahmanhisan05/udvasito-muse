@@ -32,6 +32,8 @@ export default function AlertDetail() {
   const markOpened = useMutation(refs.responsesMarkOpened);
   const accept = useMutation(refs.responsesAccept);
   const decline = useMutation(refs.responsesDecline);
+  const withdraw = useMutation(refs.responsesWithdraw);
+  const answerStillComing = useMutation(refs.responsesAnswerStillComing);
   const [selfCheck, setSelfCheck] = useState(false);
   const [donorCalls, setDonorCalls] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
@@ -158,6 +160,60 @@ export default function AlertDetail() {
       ) : null}
 
       {state === "standby" ? <Banner kind="info" icon="ℹ" text={t("alert.standby")} /> : null}
+
+      {data.myResponse?.stillComingAskedAt && !data.myResponse?.stillComingAnswer ? (
+        <View style={styles.card}>
+          <Text style={styles.body}>
+            {t("alert.stillComing", { hospital: data.request.hospitalName ?? "" })}
+          </Text>
+          <Button
+            label={t("alert.onMyWay")}
+            loading={busy}
+            onPress={() =>
+              void answerStillComing({
+                responseId: data.myResponse.responseId,
+                answer: "yes",
+              }).catch((e: unknown) => setError(errorText(t, e)))
+            }
+          />
+          <Button
+            label={t("alert.cantMakeIt")}
+            variant="secondary"
+            onPress={() =>
+              void answerStillComing({
+                responseId: data.myResponse.responseId,
+                answer: "cant",
+              }).catch((e: unknown) => setError(errorText(t, e)))
+            }
+          />
+        </View>
+      ) : null}
+
+      {data.myResponse?.state === "confirmed" ? (
+        <View style={styles.card}>
+          <Button
+            label={t("alert.cantMakeIt")}
+            variant="secondary"
+            onPress={() =>
+              void withdraw({ responseId: data.myResponse.responseId }).catch((e: unknown) =>
+                setError(errorText(t, e)),
+              )
+            }
+          />
+          {data.requester?.authUserId ? (
+            <Button
+              label={t("report.title")}
+              variant="ghost"
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/report",
+                  params: { subject: data.requester.authUserId, requestId },
+                })
+              }
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       {needsAnswer ? (
         <View style={styles.card}>
