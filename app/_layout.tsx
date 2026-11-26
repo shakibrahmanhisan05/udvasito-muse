@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { Platform, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import {
   useFonts,
   NotoSans_400Regular,
@@ -13,14 +14,18 @@ import {
   NotoSansBengali_600SemiBold,
   NotoSansBengali_700Bold,
 } from "@expo-google-fonts/noto-sans-bengali";
-import { ConvexReactClient, ConvexProvider } from "convex/react";
+import { ConvexReactClient, useMutation, useQuery } from "convex/react";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import Constants from "expo-constants";
 import { initI18n } from "@/lib/i18n";
 import { initSentry } from "@/lib/sentry";
 import { getLocalConsent } from "@/lib/consent";
 import { FALLBACK_APP_CONFIG, isVersionBelow } from "@/lib/appConfig";
 import { authClient, convexUrl, isAuthConfigured } from "@/lib/auth-client";
+import { refs } from "@/lib/refs";
+import { deviceLabel, getExpoPushToken } from "@/lib/push";
 import { OfflineBanner, ToastProvider } from "@/components";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -29,12 +34,11 @@ initSentry();
 
 /**
  * Root layout — providers + global gates G1–G7 (specs §1.5), in order.
- * P0 status: G1 (version), G2 (fonts/i18n) and G3 (consent) are live.
- * G4 (session) is live when the backend is configured. G5 (onboarding
- * complete), G6 (account status) and G7 (role) are skeleton hooks here —
- * they activate with profiles.me wiring in P1, when sign-in first works
- * end to end; their redirect targets (/onboarding, /account-status) are
- * P1 screens (SCR-O03/O06).
+ * G1 (version), G2 (fonts/i18n), G3 (consent) and G4 (session) run in
+ * useGates below. G5 (onboarding complete) and G6 (account status) run in
+ * ProfileGate against profiles.me (P1). G7 (role) shapes tab visibility in
+ * the (app) layout. Sign-in stays honest: until GOOGLE_CLIENT_SECRET is set
+ * in Convex env, no session can exist and G4 keeps signed-in routes closed.
  */
 function useGates(fontsLoaded: boolean) {
   const segments = useSegments();
@@ -62,7 +66,6 @@ function useGates(fontsLoaded: boolean) {
     if (!fontsLoaded || consentOk === null) return;
     const group = segments[0];
     const inApp = group === "(app)";
-    const inOnboarding = group === "(onboarding)";
     const route = segments[segments.length - 1];
 
     // G1 — version gate (native; web always serves the latest build).
@@ -81,11 +84,75 @@ function useGates(fontsLoaded: boolean) {
       router.replace("/(onboarding)/sign-in");
       return;
     }
-    // G5/G6/G7 — skeleton: enforced from P1 via profiles.me (see header).
-    void inOnboarding;
   }, [fontsLoaded, consentOk, segments, session.isPending, session.data, router]);
 
   return { ready: fontsLoaded && consentOk !== null };
+}
+
+/** G5/G6 — profile completeness + account status, from profiles.me. */
+function ProfileGate() {
+  const segments = useSegments();
+  const router = useRouter();
+  const session = authClient.useSession();
+  const me = useQuery(refs.me, isAuthConfigured && session.data ? {} : "skip");
+
+  useEffect(() => {
+    if (!session.data || me === undefined) return;
+    const group = segments[0];
+    const route = segments[segments.length - 1];
+    if (me === null) {
+      // Signed in but no profile yet → SCR-O03 (unless already onboarding).
+      if (group !== "(onboarding)") router.replace("/(onboarding)/onboarding");
+      return;
+    }
+    if (me.needsConsent) {
+      if (route !== "welcome") router.replace("/(onboarding)/welcome");
+      return;
+    }
+    if (me.status !== "active") {
+      if (route !== "account-status") router.replace("/(onboarding)/account-status");
+    }
+  }, [me, session.data, segments, router]);
+  return null;
+}
+
+/** Expo Push token registration + notification-opened wiring (§6.8). */
+function PushRegistrar() {
+  const session = authClient.useSession();
+  const register = useMutation(refs.pushRegisterExpoToken);
+  const markOpened = useMutation(refs.notificationsMarkOpened);
+
+  useEffect(() => {
+    if (!session.data || !isAuthConfigured) return;
+    void (async () => {
+      const token = await getExpoPushToken();
+      if (token) {
+        await register({
+          token,
+          platform: Platform.OS === "ios" ? "ios" : "android",
+          deviceLabel: deviceLabel(),
+        }).catch(() => {
+          // Push is an enhancement; failure never blocks the app.
+        });
+      }
+    })();
+  }, [session.data, register]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as {
+        notificationId?: string;
+      };
+      if (data?.notificationId) {
+        void markOpened({
+          notificationId: data.notificationId as Id<"notifications">,
+        }).catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, [markOpened]);
+  return null;
 }
 
 export default function RootLayout() {
@@ -124,8 +191,16 @@ export default function RootLayout() {
   const tree = (
     <ToastProvider>
       <OfflineBanner />
+      <ProfileGate />
+      <PushRegistrar />
       <Slot />
     </ToastProvider>
   );
-  return convex ? <ConvexProvider client={convex}>{tree}</ConvexProvider> : tree;
+  return convex ? (
+    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+      {tree}
+    </ConvexBetterAuthProvider>
+  ) : (
+    tree
+  );
 }
