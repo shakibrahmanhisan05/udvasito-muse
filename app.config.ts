@@ -39,7 +39,10 @@ const config: ExpoConfig = {
     favicon: "./public/favicon.png",
   },
   plugins: [
-    "expo-router",
+    // Async routes (route-based bundle splitting) are opt-in on SDK 57;
+    // enabled for web only — native production loads routes synchronously
+    // (docs: expo.dev/router/web/async-routes). P7/X03 bundle budget.
+    ["expo-router", { asyncRoutes: { web: true } }],
     "expo-font",
     "expo-localization",
     "expo-secure-store",
