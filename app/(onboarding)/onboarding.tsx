@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -11,6 +12,10 @@ import { errorText } from "@/lib/errors";
 
 const DATE_PLACEHOLDER = "YYYY-MM-DD";
 const PHONE_PLACEHOLDER = "01XXXXXXXXX";
+/** F-708: a campaign code from a QR/link is kept locally so it
+ *  survives the sign-in round trip and is still attributed when the
+ *  profile is completed (the server validates it either way). */
+const CAMPAIGN_KEY = "udvasito.campaignCode";
 
 /**
  * SCR-O03 — Onboarding (F-103): name, date of birth (18+ gate), mobile
@@ -30,11 +35,21 @@ export default function Onboarding() {
   const [error, setError] = useState<string | null>(null);
   const [underage, setUnderage] = useState(false);
 
+  useEffect(() => {
+    if (typeof params.c === "string" && params.c) {
+      void AsyncStorage.setItem(CAMPAIGN_KEY, params.c);
+    }
+  }, [params.c]);
+
   const submit = () => {
     setBusy(true);
     setError(null);
     void (async () => {
       try {
+        const storedCampaign =
+          typeof params.c === "string" && params.c
+            ? params.c
+            : ((await AsyncStorage.getItem(CAMPAIGN_KEY)) ?? undefined);
         const result = await complete({
           name: name.trim(),
           dateOfBirth: dob.trim(),
@@ -42,12 +57,13 @@ export default function Onboarding() {
           language: i18n.language === "bn" ? "bn" : "en",
           consentVersion: appConfig?.consentVersion ?? "2026-11-28-pilot",
           consentAcceptedAt: Date.now(),
-          campaignCode: typeof params.c === "string" ? params.c : undefined,
+          campaignCode: storedCampaign,
         });
         if (result.result === "underage") {
           setUnderage(true);
           return;
         }
+        void AsyncStorage.removeItem(CAMPAIGN_KEY);
         router.replace("/(onboarding)/verify-phone");
       } catch (e) {
         setError(errorText(t, e));
