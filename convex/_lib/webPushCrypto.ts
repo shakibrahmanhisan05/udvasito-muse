@@ -1,3 +1,4 @@
+"use node";
 /**
  * Web Push protocol primitives — RFC 8291 (aes128gcm payload
  * encryption) + RFC 8292 (VAPID) — on Node's crypto. Used ONLY by the
