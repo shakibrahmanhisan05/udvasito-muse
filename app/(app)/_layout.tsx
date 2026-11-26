@@ -84,6 +84,14 @@ export default function AppLayout() {
       <Tabs.Screen name="volunteer-request" options={{ href: null }} />
       <Tabs.Screen name="admin-people" options={{ href: null }} />
       <Tabs.Screen name="admin-person" options={{ href: null }} />
+      <Tabs.Screen name="admin" options={{ href: null }} />
+      <Tabs.Screen name="admin-moderation" options={{ href: null }} />
+      <Tabs.Screen name="admin-moderation-item" options={{ href: null }} />
+      <Tabs.Screen name="admin-audit" options={{ href: null }} />
+      <Tabs.Screen name="admin-ai" options={{ href: null }} />
+      <Tabs.Screen name="admin-usage" options={{ href: null }} />
+      <Tabs.Screen name="admin-demo" options={{ href: null }} />
+      <Tabs.Screen name="admin-settings" options={{ href: null }} />
       <Tabs.Screen name="my-data" options={{ href: null }} />
     </Tabs>
   );

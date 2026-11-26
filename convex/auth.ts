@@ -1,9 +1,11 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convexAdapter } from "@convex-dev/better-auth";
 import { betterAuth } from "better-auth";
-import { internalMutationGeneric, makeFunctionReference } from "convex/server";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { internalMutationGeneric, makeFunctionReference, type GenericActionCtx } from "convex/server";
 import { v } from "convex/values";
 import type { DataModel } from "./schemaTypes";
+import { practiceIdFromEmail } from "./_lib/practice";
 
 /**
  * Better Auth + Convex component (ADR-003). Google is the only production
@@ -62,14 +64,35 @@ export const authComponent = (
 
 /**
  * Auth-user lifecycle hooks. App profiles are created at onboarding
- * (profiles.completeOnboarding, P1) — these hooks intentionally do not
- * create profiles, so a Google account alone never becomes a member record
- * without name/DOB/phone and the 18+ gate (F-102).
+ * (profiles.completeOnboarding, P1) — these hooks do not create
+ * profiles, so a Google account alone never becomes a member record
+ * without name/DOB/phone and the 18+ gate (F-102). The one exception
+ * is LINKING: a practice profile pre-created by the super-admin is
+ * linked to its auth user in onCreateAuthUser (D-R4).
  */
 export const onCreateAuthUser = internalMutationGeneric({
   args: { doc: v.any() },
-  handler: async () => {
-    // No-op in P0 by design — see comment above.
+  handler: async (ctx, args) => {
+    // Practice accounts (D-R4): the profile is pre-created by
+    // admin.demo.preparePracticeAccount with a placeholder authUserId;
+    // link it to the real auth user the moment that user exists, so
+    // onboarding later patches the practice profile in place. Every
+    // other sign-up keeps the P0 behaviour: no profile here — profiles
+    // are created at onboarding (profiles.completeOnboarding, P1), so a
+    // Google account alone never becomes a member record without
+    // name/DOB/phone and the 18+ gate (F-102).
+    const doc = args.doc as { _id?: unknown; email?: unknown } | null;
+    const email = typeof doc?.email === "string" ? doc.email : "";
+    const practiceId = practiceIdFromEmail(email);
+    if (!practiceId || doc?._id === undefined) return;
+    const rows = await ctx.db
+      .query("profiles")
+      .filter((q) => q.and(q.eq(q.field("practiceId"), practiceId), q.eq(q.field("isDemo"), true)))
+      .take(2);
+    const profile = rows[0];
+    if (profile && profile.authUserId.startsWith("practice:")) {
+      await ctx.db.patch(profile._id, { authUserId: String(doc._id) });
+    }
   },
 });
 export const onUpdateAuthUser = internalMutationGeneric({
@@ -102,6 +125,76 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
     emailAndPassword: {
       enabled: process.env.BETTER_AUTH_EMAIL_ENABLED === "1",
       disableSignUp: false,
+    },
+    hooks: {
+      /**
+       * Practice-area sign-in gate (D-R4, specs §6.6 auth table).
+       * Email+password exists for staging test accounts and, in
+       * production, ONLY for practice accounts. For a practice email
+       * (<id>@practice.udvasito.invalid) this hook enforces, server
+       * side: the practice profile exists, the practice area is
+       * enabled, and the ID is not locked (5 attempts in 15 minutes
+       * since the last success → locked). Every attempt is recorded
+       * BEFORE the password is checked; the after hook records a
+       * success, which resets the counter. When the deployment sets
+       * EMAIL_SIGNIN_PRACTICE_ONLY=1 (production), non-practice email
+       * sign-in and all email sign-up are refused here; practice
+       * sign-up is refused always, except the one server-side
+       * provisioning call for a pre-prepared profile (admin.demo).
+       */
+      before: createAuthMiddleware(async (mw) => {
+        if (mw.path !== "/sign-in/email" && mw.path !== "/sign-up/email") return;
+        const email = typeof mw.body?.email === "string" ? mw.body.email : "";
+        const practiceId = practiceIdFromEmail(email);
+        const practiceOnly = process.env.EMAIL_SIGNIN_PRACTICE_ONLY === "1";
+        const runtime = ctx as GenericActionCtx<DataModel>;
+        if (mw.path === "/sign-up/email") {
+          if (practiceId) {
+            const prepared = (await runtime.runQuery(
+              makeFunctionReference("admin/demo:practiceById") as never,
+              { practiceId } as never,
+            )) as { authUserId: string } | null;
+            if (!prepared || !prepared.authUserId.startsWith("practice:")) {
+              throw new APIError("FORBIDDEN", { message: "Practice sign-up is disabled." });
+            }
+          } else if (practiceOnly) {
+            throw new APIError("FORBIDDEN", { message: "Sign-up is disabled." });
+          }
+          return;
+        }
+        // /sign-in/email
+        if (practiceId) {
+          const gate = (await runtime.runQuery(
+            makeFunctionReference("admin/demo:gateCheck") as never,
+            { practiceId } as never,
+          )) as { exists: boolean; enabled: boolean; locked: boolean };
+          if (!gate.exists || !gate.enabled) {
+            throw new APIError("FORBIDDEN", { message: "The practice area is not available." });
+          }
+          if (gate.locked) {
+            throw new APIError("TOO_MANY_REQUESTS", {
+              message: "Too many wrong PINs. Try again in 15 minutes.",
+            });
+          }
+          await runtime.runMutation(
+            makeFunctionReference("admin/demo:gateAttempt") as never,
+            { practiceId } as never,
+          );
+        } else if (practiceOnly) {
+          throw new APIError("FORBIDDEN", { message: "Email sign-in is for practice accounts only." });
+        }
+      }),
+      after: createAuthMiddleware(async (mw) => {
+        if (mw.path !== "/sign-in/email") return;
+        const email = mw.context.newSession?.user?.email ?? "";
+        const practiceId = practiceIdFromEmail(email);
+        if (!practiceId) return;
+        const runtime = ctx as GenericActionCtx<DataModel>;
+        await runtime.runMutation(
+          makeFunctionReference("admin/demo:gateSuccess") as never,
+          { practiceId } as never,
+        );
+      }),
     },
   });
 }

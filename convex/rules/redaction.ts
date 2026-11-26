@@ -5,9 +5,11 @@
  * stores this output.
  *
  * Rules (PRD §6.2):
- *  1. Bangladeshi phone numbers — +880 / 880 / 01 forms, spaces or dashes,
- *     Latin or Bangla digits. The contact number itself is recovered by
- *     CODE from the original text (`extractContactPhone`), never by AI.
+ *  1. Bangladeshi phone numbers — +880 / 880 / 01 forms, separated by
+ *     spaces, dashes, dots, parentheses or slashes (any run length,
+ *     incl. fully spaced digits), Latin or Bangla digits. The contact
+ *     number itself is recovered by CODE from the original text
+ *     (`extractContactPhone`), never by AI.
  *  2. The text after a name label (রোগী, রোগীর নাম, রোগীর, নাম, Patient,
  *     Name, Mr., Mrs., জনাব, বেগম, Banglish "rogir") up to the next comma
  *     or line break. Labels must be whole words/tokens — "নাম" inside
@@ -50,8 +52,23 @@ export type RedactionResult = {
 };
 
 /** Bangladeshi mobile pattern (after digit normalisation): the number
- *  itself, allowing one space/dash between digits. */
-const PHONE_RE = /(?:\+?880|00880|0)[\s-]?1[3-9](?:[\s-]?\d){8}/g;
+ *  itself, allowing separators between digits. Separators are space,
+ *  dash, dot, parentheses and slash, in any run length — pasted Facebook
+ *  posts (the primary intake source) write numbers as 01812.345.678,
+ *  (01812) 345678, 01812  345678, 01812/345678 and even fully spaced
+ *  0 1 8 1 2 3 4 5 6 7 8 (P4 review F2). PRD §6.2's enumerated set
+ *  (spaces, dashes, Bangla digits) is a subset of this class. */
+const PHONE_SHAPE = /(?:\+?880|00880|0)[\s()./-]*1[\s()./-]*[3-9](?:[\s()./-]*\d){8}/;
+const PHONE_RE = new RegExp(PHONE_SHAPE.source, "g");
+
+/**
+ * True when the text contains a Bangladeshi mobile number in ANY of the
+ * forms redact() removes — Latin or Bangla digits, any separator run.
+ * Used to void AI responses that echo a number back (convex/ai/gemini).
+ */
+export function containsPhoneNumber(text: string): boolean {
+  return PHONE_SHAPE.test(toLatinDigits(text));
+}
 
 /**
  * Extract the first Bangladeshi mobile number from RAW text (any digit
@@ -61,7 +78,7 @@ const PHONE_RE = /(?:\+?880|00880|0)[\s-]?1[3-9](?:[\s-]?\d){8}/g;
  */
 export function extractContactPhone(input: string): string | null {
   const latin = toLatinDigits(input);
-  const m = latin.match(/(?:\+?880|00880|0)[\s-]?1[3-9](?:[\s-]?\d){8}/);
+  const m = latin.match(PHONE_SHAPE);
   if (!m) return null;
   let digits = m[0].replace(/[^\d]/g, "");
   if (digits.startsWith("00880")) digits = digits.slice(5);
@@ -94,9 +111,10 @@ export function redact(input: string): RedactionResult {
     }
     return m;
   });
-  // …or written in spaced groups ("1234 5678 9012 34567").
-  text = text.replace(/\b\d[\d ]{11,}\d\b/g, (m) => {
-    const digits = m.replace(/ /g, "");
+  // …or written in spaced/dashed/dotted groups ("1234 5678 9012 34567",
+  // "1234-5678-9012-3" — the dashed form is P4 review F5, absorbed here).
+  text = text.replace(/\b\d[\d .-]{11,}\d\b/g, (m) => {
+    const digits = m.replace(/[^\d]/g, "");
     if (digits.length === 10 || digits.length === 13 || digits.length === 17) {
       removed.ids++;
       return "[id]";

@@ -15,6 +15,7 @@ import {
   type IntakeFields,
   type IntakeRefData,
 } from "../rules/intakeParser";
+import { containsPhoneNumber } from "../rules/redaction";
 
 /** Fields that must be present before a request makes sense; the AI is
  *  only consulted when one of these is still missing after rules. */
@@ -119,7 +120,11 @@ export function parseGeminiResponse(body: unknown): AiIntakeFields | null {
       candidates?: { content?: { parts?: { text?: string }[] } }[];
     })?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (typeof text !== "string") return null;
-    if (/(?:\+?880|0)1[3-9]\d{8}/.test(text)) return null;
+    // Void on a phone in ANY written form — spaced, dotted, Bangla
+    // digits — not just contiguous Latin digits (P4 review F3): fields
+    // like `area` are merged verbatim, so the check must see every
+    // form redact() would remove. containsPhoneNumber digit-normalises.
+    if (containsPhoneNumber(text)) return null;
     const raw = JSON.parse(text) as Record<string, unknown>;
 
     const bloodGroup =

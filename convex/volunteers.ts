@@ -221,7 +221,9 @@ export const setOnDuty = volunteerMutationV({
     });
     await recordEvent(ctx, "volunteer_duty_changed", {
       actorRole: ctx.profile.role,
-      props: { onDuty: args.onDuty },
+      // vpId lets the dashboard rebuild per-volunteer duty intervals
+      // for the coverage heat strip (SCR-A01); P5 addition.
+      props: { onDuty: args.onDuty, vpId: vp._id },
       isDemo: ctx.profile.isDemo,
     });
     return null;

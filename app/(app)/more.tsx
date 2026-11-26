@@ -11,6 +11,11 @@ import { refs } from "@/lib/refs";
 /** SCR-M10 — More menu (P1): settings, donor, verify-in-person for
  * volunteers/admins, legal, download, sign out. Later phases add the
  * assistant, learn and volunteer-apply entries with their screens. */
+// Specs §3.6 prose screen names without i18n keys (I18N-GAPS §4),
+// pending member 3's key review.
+const MODERATION_QUEUE = "Moderation queue";
+const AUDIT_LOG = "Audit log";
+
 export default function More() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -43,11 +48,48 @@ export default function More() {
           />
         ) : null}
         {me?.role === "admin" || me?.role === "superadmin" ? (
-          <Button
-            label={t("admin.people")}
-            variant="secondary"
-            onPress={() => router.push("/(app)/admin-people")}
-          />
+          <>
+            <Button
+              label={t("admin.dashboard")}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin")}
+            />
+            <Button
+              label={t("admin.people")}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-people")}
+            />
+            <Button
+              label={MODERATION_QUEUE}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-moderation")}
+            />
+            <Button
+              label={AUDIT_LOG}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-audit")}
+            />
+            <Button
+              label={t("admin.ai")}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-ai")}
+            />
+            <Button
+              label={t("admin.usage")}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-usage")}
+            />
+            <Button
+              label={t("admin.demo")}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-demo")}
+            />
+            <Button
+              label={t("settings.title")}
+              variant="secondary"
+              onPress={() => router.push("/(app)/admin-settings")}
+            />
+          </>
         ) : null}
         <Button
           label={t("update.download")}
