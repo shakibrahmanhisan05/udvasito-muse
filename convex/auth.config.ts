@@ -1,1 +1,12 @@
-aW1wb3J0IHsgZ2V0QXV0aENvbmZpZ1Byb3ZpZGVyIH0gZnJvbSAiQGNvbnZleC1kZXYvYmV0dGVyLWF1dGgvYXV0aC1jb25maWciOwppbXBvcnQgdHlwZSB7IEF1dGhDb25maWcgfSBmcm9tICJjb252ZXgvc2VydmVyIjsKCi8qKgogKiBDb252ZXgtc2lkZSBKV1QgdmVyaWZpY2F0aW9uIGNvbmZpZyBmb3IgQmV0dGVyIEF1dGggc2Vzc2lvbiB0b2tlbnMKICogKEBjb252ZXgtZGV2L2JldHRlci1hdXRoIDAuMTMgc2V0dXA7IHJlcXVpcmVkIGJ5IHRoZSBgY29udmV4KClgIHNlcnZlcgogKiBwbHVnaW4gaW4gYXV0aC50cykuIFdpdGhvdXQgdGhpcyBmaWxlLCBDb252ZXggY2Fubm90IHZhbGlkYXRlIHRoZQogKiB0b2tlbnMgdGhlIGF1dGggc2l0ZSBpc3N1ZXMsIGFuZCB0aGUgYXV0aCBwbHVnaW4gd2lyaW5nIGlzIGluY29tcGxldGUuCiAqLwpleHBvcnQgZGVmYXVsdCB7CiAgcHJvdmlkZXJzOiBbZ2V0QXV0aENvbmZpZ1Byb3ZpZGVyKCldLAp9IHNhdGlzZmllcyBBdXRoQ29uZmlnOwo=
+import { getAuthConfigProvider } from "@convex-dev/better-auth/auth-config";
+import type { AuthConfig } from "convex/server";
+
+/**
+ * Convex-side JWT verification config for Better Auth session tokens
+ * (@convex-dev/better-auth 0.13 setup; required by the `convex()` server
+ * plugin in auth.ts). Without this file, Convex cannot validate the
+ * tokens the auth site issues, and the auth plugin wiring is incomplete.
+ */
+export default {
+  providers: [getAuthConfigProvider()],
+} satisfies AuthConfig;
