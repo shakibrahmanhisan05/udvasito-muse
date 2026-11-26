@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { Banner, Button } from "@/components";
+import { Banner, Button, HelplineButton, Sheet } from "@/components";
 import { colors, spacing, typography } from "@/theme/tokens";
 import { authClient, isAuthConfigured } from "@/lib/auth-client";
+import { useQuery } from "convex/react";
+import { refs } from "@/lib/refs";
 
 /** SCR-O02 — Sign in (F-102, ADR-003). Google only in production. */
 export default function SignIn() {
@@ -12,6 +14,8 @@ export default function SignIn() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
 
   return (
     <View style={styles.wrap}>
@@ -46,6 +50,20 @@ export default function SignIn() {
         }}
       />
       <Text style={styles.why}>{t("signin.why")}</Text>
+      <HelplineButton label={t("signin.helpline")} />
+      {appConfig?.features.practiceAreaEnabled ? (
+        <>
+          <Button
+            label={t("signin.practice")}
+            variant="ghost"
+            onPress={() => setPracticeOpen(true)}
+          />
+          <Sheet visible={practiceOpen} title={t("signin.practice")} onClose={() => setPracticeOpen(false)}>
+            <Text style={styles.body}>{t("signin.practiceNote")}</Text>
+            <Button label={t("common.done")} onPress={() => setPracticeOpen(false)} />
+          </Sheet>
+        </>
+      ) : null}
     </View>
   );
 }
