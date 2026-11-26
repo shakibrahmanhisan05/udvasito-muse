@@ -1,1 +1,190 @@
-aW1wb3J0IHsgY3JlYXRlQ2xpZW50LCB0eXBlIEF1dGhGdW5jdGlvbnMsIHR5cGUgR2VuZXJpY0N0eCB9IGZyb20gIkBjb252ZXgtZGV2L2JldHRlci1hdXRoIjsKaW1wb3J0IHsgY29udmV4IH0gZnJvbSAiQGNvbnZleC1kZXYvYmV0dGVyLWF1dGgvcGx1Z2lucyI7CmltcG9ydCB7IGV4cG8gfSBmcm9tICJAYmV0dGVyLWF1dGgvZXhwbyI7CmltcG9ydCB7IGJldHRlckF1dGggfSBmcm9tICJiZXR0ZXItYXV0aCI7CmltcG9ydCB7IEFQSUVycm9yLCBjcmVhdGVBdXRoTWlkZGxld2FyZSB9IGZyb20gImJldHRlci1hdXRoL2FwaSI7CmltcG9ydCB7IGludGVybmFsTXV0YXRpb25HZW5lcmljLCBtYWtlRnVuY3Rpb25SZWZlcmVuY2UsIHR5cGUgR2VuZXJpY0FjdGlvbkN0eCB9IGZyb20gImNvbnZleC9zZXJ2ZXIiOwppbXBvcnQgeyB2IH0gZnJvbSAiY29udmV4L3ZhbHVlcyI7CmltcG9ydCB7IGNvbXBvbmVudHMgfSBmcm9tICIuL19nZW5lcmF0ZWQvYXBpIjsKaW1wb3J0IHR5cGUgeyBEYXRhTW9kZWwgfSBmcm9tICIuL3NjaGVtYVR5cGVzIjsKaW1wb3J0IGF1dGhDb25maWcgZnJvbSAiLi9hdXRoLmNvbmZpZyI7CmltcG9ydCB7IHByYWN0aWNlSWRGcm9tRW1haWwgfSBmcm9tICIuL19saWIvcHJhY3RpY2UiOwoKLyoqCiAqIEJldHRlciBBdXRoICsgQ29udmV4IGNvbXBvbmVudCAoQURSLTAwMykuIEdvb2dsZSBpcyB0aGUgb25seSBwcm9kdWN0aW9uCiAqIHNpZ24taW4gbWV0aG9kOyBlbWFpbCtwYXNzd29yZCBleGlzdHMgT05MWSBmb3Igc3RhZ2luZyBhdXRvbWF0ZWQgdGVzdHMgYW5kCiAqIHRoZSBwcm9kdWN0aW9uIHByYWN0aWNlLWFyZWEgc2lnbi1pbiAoUC0xMCwgRC1SNCkgYW5kIHN0YXlzIGRpc2FibGVkIHVubGVzcwogKiBCRVRURVJfQVVUSF9FTUFJTF9FTkFCTEVEPTEgaW4gdGhlIENvbnZleCBlbnZpcm9ubWVudC4KICoKICogSFVNQU4gU1RFUFMgKFJCLTQpOiBjcmVhdGUgdGhlIEdvb2dsZSBDbG91ZCBPQXV0aCBjbGllbnQgKG5vIGJpbGxpbmcpIGFuZAogKiBzZXQgR09PR0xFX0NMSUVOVF9JRCAvIEdPT0dMRV9DTElFTlRfU0VDUkVUIC8gQkVUVEVSX0FVVEhfU0VDUkVUIC8KICogQkVUVEVSX0FVVEhfVVJMIGluIHRoZSBDb252ZXggZW52LiBObyBjcmVkZW50aWFscyBsaXZlIGluIHRoaXMgcmVwby4KICoKICogV0lSSU5HIChmaXhlZCAyMDI2LTExLTI2IGFmdGVyIHRoZSBmaXJzdCBsaXZlIHNpZ24taW4gdGVzdCBmYWlsZWQgd2l0aCBhCiAqIDUwMCBvbiAvYXBpL2F1dGgvc2lnbi1pbi9zb2NpYWwpOiB0aGlzIGZvbGxvd3MgdGhlIEBjb252ZXgtZGV2L2JldHRlci1hdXRoCiAqIDAuMTMgRXhwbyBndWlkZSBleGFjdGx5IOKAlCB0aGUgZ2VuZXJhdGVkIGBjb21wb25lbnRzLmJldHRlckF1dGhgLCB0aGUKICogY2xpZW50J3Mgb3duIGBhZGFwdGVyKGN0eClgLCBgY29udmV4L2F1dGguY29uZmlnLnRzYCwgYW5kIHRoZSByZXF1aXJlZAogKiBgZXhwbygpYCArIGBjb252ZXgoeyBhdXRoQ29uZmlnIH0pYCBzZXJ2ZXIgcGx1Z2lucy4gVGhlIFAwIGhhbmQtcm9sbGVkCiAqIGNvbXBvbmVudCByZWZlcmVuY2UgcGFzc2VkIHRoZSBjcmVhdGVDbGllbnQgUkVTVUxUIHRvIGNvbnZleEFkYXB0ZXIoKSwKICogd2hvc2UgYC5hZGFwdGVyYCBpcyBhIGZhY3RvcnkgZnVuY3Rpb24sIG5vdCB0aGUgY29tcG9uZW50J3MgcmVmZXJlbmNlCiAqIGJhZyDigJQgZXZlcnkgYWRhcHRlciBjYWxsIHRoZW4gcmVhZCBmdW5jdGlvbiByZWZlcmVuY2VzIG9mZiBgdW5kZWZpbmVkYAogKiAoIkNhbm5vdCByZWFkIHByb3BlcnRpZXMgb2YgdW5kZWZpbmVkIChyZWFkaW5nICdTeW1ib2woZnVuY3Rpb25OYW1lKScpIikuCiAqLwpleHBvcnQgY29uc3QgYXV0aENvbXBvbmVudCA9IGNyZWF0ZUNsaWVudDxEYXRhTW9kZWw+KGNvbXBvbmVudHMuYmV0dGVyQXV0aCwgewogIC8vIFN0cmluZy1idWlsdCByZWZlcmVuY2VzIChub3QgaW50ZXJuYWwuYXV0aC4qKSBrZWVwIHRoaXMgaW5pdGlhbGl6ZXIKICAvLyBvdXQgb2YgdGhlIHR5cGUtaW5mZXJlbmNlIGN5Y2xlIHRocm91Z2ggdGhlIGF1dGggbW9kdWxlIGl0c2VsZjsKICAvLyBtYWtlRnVuY3Rpb25SZWZlcmVuY2UgZGVmYXVsdHMgdG8gInB1YmxpYyIgdmlzaWJpbGl0eSwgaGVuY2UgdGhlIGNhc3QuCiAgYXV0aEZ1bmN0aW9uczogewogICAgb25DcmVhdGU6IG1ha2VGdW5jdGlvblJlZmVyZW5jZSgiYXV0aDpvbkNyZWF0ZUF1dGhVc2VyIikgYXMgdW5rbm93biBhcyBBdXRoRnVuY3Rpb25zWyJvbkNyZWF0ZSJdLAogICAgb25VcGRhdGU6IG1ha2VGdW5jdGlvblJlZmVyZW5jZSgiYXV0aDpvblVwZGF0ZUF1dGhVc2VyIikgYXMgdW5rbm93biBhcyBBdXRoRnVuY3Rpb25zWyJvblVwZGF0ZSJdLAogICAgb25EZWxldGU6IG1ha2VGdW5jdGlvblJlZmVyZW5jZSgiYXV0aDpvbkRlbGV0ZUF1dGhVc2VyIikgYXMgdW5rbm93biBhcyBBdXRoRnVuY3Rpb25zWyJvbkRlbGV0ZSJdLAogIH0sCiAgLy8gTk9URSAocmV2aWV3ZWQgMjAyNi0xMS0yNik6IGluIEBjb252ZXgtZGV2L2JldHRlci1hdXRoIDAuMTMuMSB0aGUKICAvLyBhZGFwdGVyIG9ubHkgZGlzcGF0Y2hlcyBsaWZlY3ljbGUgY2FsbGJhY2tzIGZvciBtb2RlbHMgcHJlc2VudCBpbgogIC8vIGB0cmlnZ2Vyc2AsIHNvIHdpdGggdGhpcyBlbXB0eSBtYXAgdGhlIGNvbXBvbmVudCBkb2VzIE5PVCBpbnZva2UKICAvLyBhdXRoOm9uQ3JlYXRlQXV0aFVzZXIgZXQgYWwuIGF0IHJ1bnRpbWUuIFRoYXQgaXMgYWNjZXB0ZWQgZm9yIG5vdzoKICAvLyBvblVwZGF0ZS9vbkRlbGV0ZSBhcmUgbm8tb3BzLCBhbmQgb25DcmVhdGUncyBvbmx5IGpvYiAocHJhY3RpY2UKICAvLyBwcm9maWxlIGxpbmtpbmcpIGlzIGFsc28gcGVyZm9ybWVkIGV4cGxpY2l0bHkgYnkgYWRtaW4uZGVtbyB2aWEKICAvLyBsaW5rUHJhY3RpY2VBY2NvdW50LiBGb2xsb3ctdXA6IHdpcmUgdGhlIGNhbm9uaWNhbAogIC8vIHRyaWdnZXJzOnt1c2VyOnvigKZ9fSArIHRyaWdnZXJzQXBpKCkgcmVmcyBiZWZvcmUgYW55IG5ldyBmbG93IHJlbGllcwogIC8vIG9uIHRoZXNlIGhvb2tzIChzZWUgcWEvZml4LWJldHRlci1hdXRoLXBsdWdpbnMtcmV2aWV3Lm1kKS4KICB0cmlnZ2Vyczoge30sCn0pOwoKLyoqCiAqIEF1dGgtdXNlciBsaWZlY3ljbGUgaG9va3MuIEFwcCBwcm9maWxlcyBhcmUgY3JlYXRlZCBhdCBvbmJvYXJkaW5nCiAqIChwcm9maWxlcy5jb21wbGV0ZU9uYm9hcmRpbmcsIFAxKSDigJQgdGhlc2UgaG9va3MgZG8gbm90IGNyZWF0ZQogKiBwcm9maWxlcywgc28gYSBHb29nbGUgYWNjb3VudCBhbG9uZSBuZXZlciBiZWNvbWVzIGEgbWVtYmVyIHJlY29yZAogKiB3aXRob3V0IG5hbWUvRE9CL3Bob25lIGFuZCB0aGUgMTgrIGdhdGUgKEYtMTAyKS4gVGhlIG9uZSBleGNlcHRpb24KICogaXMgTElOS0lORzogYSBwcmFjdGljZSBwcm9maWxlIHByZS1jcmVhdGVkIGJ5IHRoZSBzdXBlci1hZG1pbiBpcwogKiBsaW5rZWQgdG8gaXRzIGF1dGggdXNlciBpbiBvbkNyZWF0ZUF1dGhVc2VyIChELVI0KS4KICovCmV4cG9ydCBjb25zdCBvbkNyZWF0ZUF1dGhVc2VyID0gaW50ZXJuYWxNdXRhdGlvbkdlbmVyaWMoewogIGFyZ3M6IHsgZG9jOiB2LmFueSgpIH0sCiAgaGFuZGxlcjogYXN5bmMgKGN0eCwgYXJncykgPT4gewogICAgLy8gUHJhY3RpY2UgYWNjb3VudHMgKEQtUjQpOiB0aGUgcHJvZmlsZSBpcyBwcmUtY3JlYXRlZCBieQogICAgLy8gYWRtaW4uZGVtby5wcmVwYXJlUHJhY3RpY2VBY2NvdW50IHdpdGggYSBwbGFjZWhvbGRlciBhdXRoVXNlcklkOwogICAgLy8gbGluayBpdCB0byB0aGUgcmVhbCBhdXRoIHVzZXIgdGhlIG1vbWVudCB0aGF0IHVzZXIgZXhpc3RzLCBzbwogICAgLy8gb25ib2FyZGluZyBsYXRlciBwYXRjaGVzIHRoZSBwcmFjdGljZSBwcm9maWxlIGluIHBsYWNlLiBFdmVyeQogICAgLy8gb3RoZXIgc2lnbi11cCBrZWVwcyB0aGUgUDAgYmVoYXZpb3VyOiBubyBwcm9maWxlIGhlcmUg4oCUIHByb2ZpbGVzCiAgICAvLyBhcmUgY3JlYXRlZCBhdCBvbmJvYXJkaW5nIChwcm9maWxlcy5jb21wbGV0ZU9uYm9hcmRpbmcsIFAxKSwgc28gYQogICAgLy8gR29vZ2xlIGFjY291bnQgYWxvbmUgbmV2ZXIgYmVjb21lcyBhIG1lbWJlciByZWNvcmQgd2l0aG91dAogICAgLy8gbmFtZS9ET0IvcGhvbmUgYW5kIHRoZSAxOCsgZ2F0ZSAoRi0xMDIpLgogICAgY29uc3QgZG9jID0gYXJncy5kb2MgYXMgeyBfaWQ/OiB1bmtub3duOyBlbWFpbD86IHVua25vd24gfSB8IG51bGw7CiAgICBjb25zdCBlbWFpbCA9IHR5cGVvZiBkb2M/LmVtYWlsID09PSAic3RyaW5nIiA/IGRvYy5lbWFpbCA6ICIiOwogICAgY29uc3QgcHJhY3RpY2VJZCA9IHByYWN0aWNlSWRGcm9tRW1haWwoZW1haWwpOwogICAgaWYgKCFwcmFjdGljZUlkIHx8IGRvYz8uX2lkID09PSB1bmRlZmluZWQpIHJldHVybjsKICAgIGNvbnN0IHJvd3MgPSBhd2FpdCBjdHguZGIKICAgICAgLnF1ZXJ5KCJwcm9maWxlcyIpCiAgICAgIC5maWx0ZXIoKHEpID0+IHEuYW5kKHEuZXEocS5maWVsZCgicHJhY3RpY2VJZCIpLCBwcmFjdGljZUlkKSwgcS5lcShxLmZpZWxkKCJpc0RlbW8iKSwgdHJ1ZSkpKQogICAgICAudGFrZSgyKTsKICAgIGNvbnN0IHByb2ZpbGUgPSByb3dzWzBdOwogICAgaWYgKHByb2ZpbGUgJiYgcHJvZmlsZS5hdXRoVXNlcklkLnN0YXJ0c1dpdGgoInByYWN0aWNlOiIpKSB7CiAgICAgIGF3YWl0IGN0eC5kYi5wYXRjaChwcm9maWxlLl9pZCwgeyBhdXRoVXNlcklkOiBTdHJpbmcoZG9jLl9pZCkgfSk7CiAgICB9CiAgfSwKfSk7CmV4cG9ydCBjb25zdCBvblVwZGF0ZUF1dGhVc2VyID0gaW50ZXJuYWxNdXRhdGlvbkdlbmVyaWMoewogIGFyZ3M6IHsgZG9jOiB2LmFueSgpLCBvbGREb2M6IHYuYW55KCkgfSwKICBoYW5kbGVyOiBhc3luYyAoKSA9PiB7CiAgICAvLyBOby1vcCBpbiBQMCBieSBkZXNpZ24uCiAgfSwKfSk7CmV4cG9ydCBjb25zdCBvbkRlbGV0ZUF1dGhVc2VyID0gaW50ZXJuYWxNdXRhdGlvbkdlbmVyaWMoewogIGFyZ3M6IHsgZG9jOiB2LmFueSgpIH0sCiAgaGFuZGxlcjogYXN5bmMgKCkgPT4gewogICAgLy8gQWNjb3VudCBkZWxldGlvbiBmbG93IGxhbmRzIGluIFAzIChGLTYwMykgdmlhIHJldGVudGlvbiBqb2JzLgogIH0sCn0pOwoKZXhwb3J0IGZ1bmN0aW9uIGNyZWF0ZUF1dGgoY3R4OiBHZW5lcmljQ3R4PERhdGFNb2RlbD4pIHsKICBjb25zdCBnb29nbGVDb25maWd1cmVkID0gQm9vbGVhbihwcm9jZXNzLmVudi5HT09HTEVfQ0xJRU5UX0lEICYmIHByb2Nlc3MuZW52LkdPT0dMRV9DTElFTlRfU0VDUkVUKTsKICByZXR1cm4gYmV0dGVyQXV0aCh7CiAgICBiYXNlVVJMOiBwcm9jZXNzLmVudi5CRVRURVJfQVVUSF9VUkwsCiAgICBzZWNyZXQ6IHByb2Nlc3MuZW52LkJFVFRFUl9BVVRIX1NFQ1JFVCwKICAgIGRhdGFiYXNlOiBhdXRoQ29tcG9uZW50LmFkYXB0ZXIoY3R4KSwKICAgIHBsdWdpbnM6IFtleHBvKCksIGNvbnZleCh7IGF1dGhDb25maWcgfSldLAogICAgc29jaWFsUHJvdmlkZXJzOiBnb29nbGVDb25maWd1cmVkCiAgICAgID8gewogICAgICAgICAgZ29vZ2xlOiB7CiAgICAgICAgICAgIGNsaWVudElkOiBwcm9jZXNzLmVudi5HT09HTEVfQ0xJRU5UX0lEIGFzIHN0cmluZywKICAgICAgICAgICAgY2xpZW50U2VjcmV0OiBwcm9jZXNzLmVudi5HT09HTEVfQ0xJRU5UX1NFQ1JFVCBhcyBzdHJpbmcsCiAgICAgICAgICB9LAogICAgICAgIH0KICAgICAgOiB7fSwKICAgIGVtYWlsQW5kUGFzc3dvcmQ6IHsKICAgICAgZW5hYmxlZDogcHJvY2Vzcy5lbnYuQkVUVEVSX0FVVEhfRU1BSUxfRU5BQkxFRCA9PT0gIjEiLAogICAgICBkaXNhYmxlU2lnblVwOiBmYWxzZSwKICAgIH0sCiAgICBob29rczogewogICAgICAvKioKICAgICAgICogUHJhY3RpY2UtYXJlYSBzaWduLWluIGdhdGUgKEQtUjQsIHNwZWNzIMKnNi42IGF1dGggdGFibGUpLgogICAgICAgKiBFbWFpbCtwYXNzd29yZCBleGlzdHMgZm9yIHN0YWdpbmcgdGVzdCBhY2NvdW50cyBhbmQsIGluCiAgICAgICAqIHByb2R1Y3Rpb24sIE9OTFkgZm9yIHByYWN0aWNlIGFjY291bnRzLiBGb3IgYSBwcmFjdGljZSBlbWFpbAogICAgICAgKiAoPGlkPkBwcmFjdGljZS51ZHZhc2l0by5pbnZhbGlkKSB0aGlzIGhvb2sgZW5mb3JjZXMsIHNlcnZlcgogICAgICAgKiBzaWRlOiB0aGUgcHJhY3RpY2UgcHJvZmlsZSBleGlzdHMsIHRoZSBwcmFjdGljZSBhcmVhIGlzCiAgICAgICAqIGVuYWJsZWQsIGFuZCB0aGUgSUQgaXMgbm90IGxvY2tlZCAoNSBhdHRlbXB0cyBpbiAxNSBtaW51dGVzCiAgICAgICAqIHNpbmNlIHRoZSBsYXN0IHN1Y2Nlc3Mg4oaSIGxvY2tlZCkuIEV2ZXJ5IGF0dGVtcHQgaXMgcmVjb3JkZWQKICAgICAgICogQkVGT1JFIHRoZSBwYXNzd29yZCBpcyBjaGVja2VkOyB0aGUgYWZ0ZXIgaG9vayByZWNvcmRzIGEKICAgICAgICogc3VjY2Vzcywgd2hpY2ggcmVzZXRzIHRoZSBjb3VudGVyLiBXaGVuIHRoZSBkZXBsb3ltZW50IHNldHMKICAgICAgICogRU1BSUxfU0lHTklOX1BSQUNUSUNFX09OTFk9MSAocHJvZHVjdGlvbiksIG5vbi1wcmFjdGljZSBlbWFpbAogICAgICAgKiBzaWduLWluIGFuZCBhbGwgZW1haWwgc2lnbi11cCBhcmUgcmVmdXNlZCBoZXJlOyBwcmFjdGljZQogICAgICAgKiBzaWduLXVwIGlzIHJlZnVzZWQgYWx3YXlzLCBleGNlcHQgdGhlIG9uZSBzZXJ2ZXItc2lkZQogICAgICAgKiBwcm92aXNpb25pbmcgY2FsbCBmb3IgYSBwcmUtcHJlcGFyZWQgcHJvZmlsZSAoYWRtaW4uZGVtbykuCiAgICAgICAqLwogICAgICBiZWZvcmU6IGNyZWF0ZUF1dGhNaWRkbGV3YXJlKGFzeW5jIChtdykgPT4gewogICAgICAgIGlmIChtdy5wYXRoICE9PSAiL3NpZ24taW4vZW1haWwiICYmIG13LnBhdGggIT09ICIvc2lnbi11cC9lbWFpbCIpIHJldHVybjsKICAgICAgICBjb25zdCBlbWFpbCA9IHR5cGVvZiBtdy5ib2R5Py5lbWFpbCA9PT0gInN0cmluZyIgPyBtdy5ib2R5LmVtYWlsIDogIiI7CiAgICAgICAgY29uc3QgcHJhY3RpY2VJZCA9IHByYWN0aWNlSWRGcm9tRW1haWwoZW1haWwpOwogICAgICAgIGNvbnN0IHByYWN0aWNlT25seSA9IHByb2Nlc3MuZW52LkVNQUlMX1NJR05JTl9QUkFDVElDRV9PTkxZID09PSAiMSI7CiAgICAgICAgY29uc3QgcnVudGltZSA9IGN0eCBhcyBHZW5lcmljQWN0aW9uQ3R4PERhdGFNb2RlbD47CiAgICAgICAgaWYgKG13LnBhdGggPT09ICIvc2lnbi11cC9lbWFpbCIpIHsKICAgICAgICAgIGlmIChwcmFjdGljZUlkKSB7CiAgICAgICAgICAgIGNvbnN0IHByZXBhcmVkID0gKGF3YWl0IHJ1bnRpbWUucnVuUXVlcnkoCiAgICAgICAgICAgICAgbWFrZUZ1bmN0aW9uUmVmZXJlbmNlKCJhZG1pbi9kZW1vOnByYWN0aWNlQnlJZCIpIGFzIG5ldmVyLAogICAgICAgICAgICAgIHsgcHJhY3RpY2VJZCB9IGFzIG5ldmVyLAogICAgICAgICAgICApKSBhcyB7IGF1dGhVc2VySWQ6IHN0cmluZyB9IHwgbnVsbDsKICAgICAgICAgICAgaWYgKCFwcmVwYXJlZCB8fCAhcHJlcGFyZWQuYXV0aFVzZXJJZC5zdGFydHNXaXRoKCJwcmFjdGljZToiKSkgewogICAgICAgICAgICAgIHRocm93IG5ldyBBUElFcnJvcigiRk9SQklEREVOIiwgeyBtZXNzYWdlOiAiUHJhY3RpY2Ugc2lnbi11cCBpcyBkaXNhYmxlZC4iIH0pOwogICAgICAgICAgICB9CiAgICAgICAgICB9IGVsc2UgaWYgKHByYWN0aWNlT25seSkgewogICAgICAgICAgICB0aHJvdyBuZXcgQVBJRXJyb3IoIkZPUkJJRERFTiIsIHsgbWVzc2FnZTogIlNpZ24tdXAgaXMgZGlzYWJsZWQuIiB9KTsKICAgICAgICAgIH0KICAgICAgICAgIHJldHVybjsKICAgICAgICB9CiAgICAgICAgLy8gL3NpZ24taW4vZW1haWwKICAgICAgICBpZiAocHJhY3RpY2VJZCkgewogICAgICAgICAgY29uc3QgZ2F0ZSA9IChhd2FpdCBydW50aW1lLnJ1blF1ZXJ5KAogICAgICAgICAgICBtYWtlRnVuY3Rpb25SZWZlcmVuY2UoImFkbWluL2RlbW86Z2F0ZUNoZWNrIikgYXMgbmV2ZXIsCiAgICAgICAgICAgIHsgcHJhY3RpY2VJZCB9IGFzIG5ldmVyLAogICAgICAgICAgKSkgYXMgeyBleGlzdHM6IGJvb2xlYW47IGVuYWJsZWQ6IGJvb2xlYW47IGxvY2tlZDogYm9vbGVhbiB9OwogICAgICAgICAgaWYgKCFnYXRlLmV4aXN0cyB8fCAhZ2F0ZS5lbmFibGVkKSB7CiAgICAgICAgICAgIHRocm93IG5ldyBBUElFcnJvcigiRk9SQklEREVOIiwgeyBtZXNzYWdlOiAiVGhlIHByYWN0aWNlIGFyZWEgaXMgbm90IGF2YWlsYWJsZS4iIH0pOwogICAgICAgICAgfQogICAgICAgICAgaWYgKGdhdGUubG9ja2VkKSB7CiAgICAgICAgICAgIHRocm93IG5ldyBBUElFcnJvcigiVE9PX01BTllfUkVRVUVTVFMiLCB7CiAgICAgICAgICAgICAgbWVzc2FnZTogIlRvbyBtYW55IHdyb25nIFBJTnMuIFRyeSBhZ2FpbiBpbiAxNSBtaW51dGVzLiIsCiAgICAgICAgICAgIH0pOwogICAgICAgICAgfQogICAgICAgICAgYXdhaXQgcnVudGltZS5ydW5NdXRhdGlvbigKICAgICAgICAgICAgbWFrZUZ1bmN0aW9uUmVmZXJlbmNlKCJhZG1pbi9kZW1vOmdhdGVBdHRlbXB0IikgYXMgbmV2ZXIsCiAgICAgICAgICAgIHsgcHJhY3RpY2VJZCB9IGFzIG5ldmVyLAogICAgICAgICAgKTsKICAgICAgICB9IGVsc2UgaWYgKHByYWN0aWNlT25seSkgewogICAgICAgICAgdGhyb3cgbmV3IEFQSUVycm9yKCJGT1JCSURERU4iLCB7IG1lc3NhZ2U6ICJFbWFpbCBzaWduLWluIGlzIGZvciBwcmFjdGljZSBhY2NvdW50cyBvbmx5LiIgfSk7CiAgICAgICAgfQogICAgICB9KSwKICAgICAgYWZ0ZXI6IGNyZWF0ZUF1dGhNaWRkbGV3YXJlKGFzeW5jIChtdykgPT4gewogICAgICAgIGlmIChtdy5wYXRoICE9PSAiL3NpZ24taW4vZW1haWwiKSByZXR1cm47CiAgICAgICAgY29uc3QgZW1haWwgPSBtdy5jb250ZXh0Lm5ld1Nlc3Npb24/LnVzZXI/LmVtYWlsID8/ICIiOwogICAgICAgIGNvbnN0IHByYWN0aWNlSWQgPSBwcmFjdGljZUlkRnJvbUVtYWlsKGVtYWlsKTsKICAgICAgICBpZiAoIXByYWN0aWNlSWQpIHJldHVybjsKICAgICAgICBjb25zdCBydW50aW1lID0gY3R4IGFzIEdlbmVyaWNBY3Rpb25DdHg8RGF0YU1vZGVsPjsKICAgICAgICBhd2FpdCBydW50aW1lLnJ1bk11dGF0aW9uKAogICAgICAgICAgbWFrZUZ1bmN0aW9uUmVmZXJlbmNlKCJhZG1pbi9kZW1vOmdhdGVTdWNjZXNzIikgYXMgbmV2ZXIsCiAgICAgICAgICB7IHByYWN0aWNlSWQgfSBhcyBuZXZlciwKICAgICAgICApOwogICAgICB9KSwKICAgIH0sCiAgfSk7Cn0K
+import { createClient, type AuthFunctions, type GenericCtx } from "@convex-dev/better-auth";
+import { convex } from "@convex-dev/better-auth/plugins";
+import { expo } from "@better-auth/expo";
+import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { internalMutationGeneric, makeFunctionReference, type GenericActionCtx } from "convex/server";
+import { v } from "convex/values";
+import { components } from "./_generated/api";
+import type { DataModel } from "./schemaTypes";
+import authConfig from "./auth.config";
+import { practiceIdFromEmail } from "./_lib/practice";
+
+/**
+ * Better Auth + Convex component (ADR-003). Google is the only production
+ * sign-in method; email+password exists ONLY for staging automated tests and
+ * the production practice-area sign-in (P-10, D-R4) and stays disabled unless
+ * BETTER_AUTH_EMAIL_ENABLED=1 in the Convex environment.
+ *
+ * HUMAN STEPS (RB-4): create the Google Cloud OAuth client (no billing) and
+ * set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / BETTER_AUTH_SECRET /
+ * BETTER_AUTH_URL in the Convex env. No credentials live in this repo.
+ *
+ * WIRING (fixed 2026-11-26 after the first live sign-in test failed with a
+ * 500 on /api/auth/sign-in/social): this follows the @convex-dev/better-auth
+ * 0.13 Expo guide exactly — the generated `components.betterAuth`, the
+ * client's own `adapter(ctx)`, `convex/auth.config.ts`, and the required
+ * `expo()` + `convex({ authConfig })` server plugins. The P0 hand-rolled
+ * component reference passed the createClient RESULT to convexAdapter(),
+ * whose `.adapter` is a factory function, not the component's reference
+ * bag — every adapter call then read function references off `undefined`
+ * ("Cannot read properties of undefined (reading 'Symbol(functionName)')").
+ */
+export const authComponent = createClient<DataModel>(components.betterAuth, {
+  // String-built references (not internal.auth.*) keep this initializer
+  // out of the type-inference cycle through the auth module itself;
+  // makeFunctionReference defaults to "public" visibility, hence the cast.
+  authFunctions: {
+    onCreate: makeFunctionReference("auth:onCreateAuthUser") as unknown as AuthFunctions["onCreate"],
+    onUpdate: makeFunctionReference("auth:onUpdateAuthUser") as unknown as AuthFunctions["onUpdate"],
+    onDelete: makeFunctionReference("auth:onDeleteAuthUser") as unknown as AuthFunctions["onDelete"],
+  },
+  // NOTE (reviewed 2026-11-26): in @convex-dev/better-auth 0.13.1 the
+  // adapter only dispatches lifecycle callbacks for models present in
+  // `triggers`, so with this empty map the component does NOT invoke
+  // auth:onCreateAuthUser et al. at runtime. That is accepted for now:
+  // onUpdate/onDelete are no-ops, and onCreate's only job (practice
+  // profile linking) is also performed explicitly by admin.demo via
+  // linkPracticeAccount. Follow-up: wire the canonical
+  // triggers:{user:{…}} + triggersApi() refs before any new flow relies
+  // on these hooks (see qa/fix-better-auth-plugins-review.md).
+  triggers: {},
+});
+
+/**
+ * Auth-user lifecycle hooks. App profiles are created at onboarding
+ * (profiles.completeOnboarding, P1) — these hooks do not create
+ * profiles, so a Google account alone never becomes a member record
+ * without name/DOB/phone and the 18+ gate (F-102). The one exception
+ * is LINKING: a practice profile pre-created by the super-admin is
+ * linked to its auth user in onCreateAuthUser (D-R4).
+ */
+export const onCreateAuthUser = internalMutationGeneric({
+  args: { doc: v.any() },
+  handler: async (ctx, args) => {
+    // Practice accounts (D-R4): the profile is pre-created by
+    // admin.demo.preparePracticeAccount with a placeholder authUserId;
+    // link it to the real auth user the moment that user exists, so
+    // onboarding later patches the practice profile in place. Every
+    // other sign-up keeps the P0 behaviour: no profile here — profiles
+    // are created at onboarding (profiles.completeOnboarding, P1), so a
+    // Google account alone never becomes a member record without
+    // name/DOB/phone and the 18+ gate (F-102).
+    const doc = args.doc as { _id?: unknown; email?: unknown } | null;
+    const email = typeof doc?.email === "string" ? doc.email : "";
+    const practiceId = practiceIdFromEmail(email);
+    if (!practiceId || doc?._id === undefined) return;
+    const rows = await ctx.db
+      .query("profiles")
+      .filter((q) => q.and(q.eq(q.field("practiceId"), practiceId), q.eq(q.field("isDemo"), true)))
+      .take(2);
+    const profile = rows[0];
+    if (profile && profile.authUserId.startsWith("practice:")) {
+      await ctx.db.patch(profile._id, { authUserId: String(doc._id) });
+    }
+  },
+});
+export const onUpdateAuthUser = internalMutationGeneric({
+  args: { doc: v.any(), oldDoc: v.any() },
+  handler: async () => {
+    // No-op in P0 by design.
+  },
+});
+export const onDeleteAuthUser = internalMutationGeneric({
+  args: { doc: v.any() },
+  handler: async () => {
+    // Account deletion flow lands in P3 (F-603) via retention jobs.
+  },
+});
+
+export function createAuth(ctx: GenericCtx<DataModel>) {
+  const googleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  return betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL,
+    secret: process.env.BETTER_AUTH_SECRET,
+    database: authComponent.adapter(ctx),
+    plugins: [expo(), convex({ authConfig })],
+    socialProviders: googleConfigured
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+          },
+        }
+      : {},
+    emailAndPassword: {
+      enabled: process.env.BETTER_AUTH_EMAIL_ENABLED === "1",
+      disableSignUp: false,
+    },
+    hooks: {
+      /**
+       * Practice-area sign-in gate (D-R4, specs §6.6 auth table).
+       * Email+password exists for staging test accounts and, in
+       * production, ONLY for practice accounts. For a practice email
+       * (<id>@practice.udvasito.invalid) this hook enforces, server
+       * side: the practice profile exists, the practice area is
+       * enabled, and the ID is not locked (5 attempts in 15 minutes
+       * since the last success → locked). Every attempt is recorded
+       * BEFORE the password is checked; the after hook records a
+       * success, which resets the counter. When the deployment sets
+       * EMAIL_SIGNIN_PRACTICE_ONLY=1 (production), non-practice email
+       * sign-in and all email sign-up are refused here; practice
+       * sign-up is refused always, except the one server-side
+       * provisioning call for a pre-prepared profile (admin.demo).
+       */
+      before: createAuthMiddleware(async (mw) => {
+        if (mw.path !== "/sign-in/email" && mw.path !== "/sign-up/email") return;
+        const email = typeof mw.body?.email === "string" ? mw.body.email : "";
+        const practiceId = practiceIdFromEmail(email);
+        const practiceOnly = process.env.EMAIL_SIGNIN_PRACTICE_ONLY === "1";
+        const runtime = ctx as GenericActionCtx<DataModel>;
+        if (mw.path === "/sign-up/email") {
+          if (practiceId) {
+            const prepared = (await runtime.runQuery(
+              makeFunctionReference("admin/demo:practiceById") as never,
+              { practiceId } as never,
+            )) as { authUserId: string } | null;
+            if (!prepared || !prepared.authUserId.startsWith("practice:")) {
+              throw new APIError("FORBIDDEN", { message: "Practice sign-up is disabled." });
+            }
+          } else if (practiceOnly) {
+            throw new APIError("FORBIDDEN", { message: "Sign-up is disabled." });
+          }
+          return;
+        }
+        // /sign-in/email
+        if (practiceId) {
+          const gate = (await runtime.runQuery(
+            makeFunctionReference("admin/demo:gateCheck") as never,
+            { practiceId } as never,
+          )) as { exists: boolean; enabled: boolean; locked: boolean };
+          if (!gate.exists || !gate.enabled) {
+            throw new APIError("FORBIDDEN", { message: "The practice area is not available." });
+          }
+          if (gate.locked) {
+            throw new APIError("TOO_MANY_REQUESTS", {
+              message: "Too many wrong PINs. Try again in 15 minutes.",
+            });
+          }
+          await runtime.runMutation(
+            makeFunctionReference("admin/demo:gateAttempt") as never,
+            { practiceId } as never,
+          );
+        } else if (practiceOnly) {
+          throw new APIError("FORBIDDEN", { message: "Email sign-in is for practice accounts only." });
+        }
+      }),
+      after: createAuthMiddleware(async (mw) => {
+        if (mw.path !== "/sign-in/email") return;
+        const email = mw.context.newSession?.user?.email ?? "";
+        const practiceId = practiceIdFromEmail(email);
+        if (!practiceId) return;
+        const runtime = ctx as GenericActionCtx<DataModel>;
+        await runtime.runMutation(
+          makeFunctionReference("admin/demo:gateSuccess") as never,
+          { practiceId } as never,
+        );
+      }),
+    },
+  });
+}
