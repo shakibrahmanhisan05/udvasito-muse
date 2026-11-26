@@ -156,8 +156,7 @@ export const upsert = memberMutationV({
 });
 
 /** donors.getMine (specs §6.3) — own donor profile + derived state. */
-export const getMine = memberQueryV({
-  args: {},
+export const getMine = memberQueryV({  args: {},
   handler: async (ctx) => {
     const donor = await ctx.db
       .query("donorProfiles")
@@ -172,5 +171,63 @@ export const getMine = memberQueryV({
       live,
       notLiveReasons,
     };
+  },
+});
+
+const availabilityArg = v.union(
+  v.literal("available"), v.literal("paused"), v.literal("unavailable"),
+);
+
+const DAY_MS = 86_400_000;
+
+/**
+ * donors.setAvailability (specs §6.3, F-602): pause 1 week / 1 month /
+ * until a date (VAL-20: the date must be 1–180 days out), mark not
+ * available, or come back. Paused donors are skipped by matching; the
+ * hourly sweep flips an elapsed pause back to available (NTF-13).
+ */
+export const setAvailability = memberMutationV({
+  args: { availability: availabilityArg, pausedUntil: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const donor = await ctx.db
+      .query("donorProfiles")
+      .withIndex("by_profile", (q) => q.eq("profileId", ctx.profile._id))
+      .unique();
+    if (!donor) fail("ERR_NOT_FOUND");
+    const now = Date.now();
+    if (args.availability === "paused") {
+      if (
+        args.pausedUntil === undefined ||
+        args.pausedUntil < now + DAY_MS ||
+        args.pausedUntil > now + 180 * DAY_MS
+      ) {
+        fail("ERR_VALIDATION", {}, "pausedUntil");
+      }
+    }
+    await ctx.db.patch(donor._id, {
+      availability: args.availability,
+      pausedUntil: args.availability === "paused" ? args.pausedUntil : undefined,
+      availabilityConfirmedAt: now,
+    });
+    await recordEvent(ctx, "availability_changed", {
+      actorRole: ctx.profile.role,
+      props: { state: args.availability },
+      isDemo: ctx.profile.isDemo,
+    });
+    return null;
+  },
+});
+
+/** donors.confirmStillAvailable (specs §6.3) — the S-28 nudge answer. */
+export const confirmStillAvailable = memberMutationV({
+  args: {},
+  handler: async (ctx) => {
+    const donor = await ctx.db
+      .query("donorProfiles")
+      .withIndex("by_profile", (q) => q.eq("profileId", ctx.profile._id))
+      .unique();
+    if (!donor) fail("ERR_NOT_FOUND");
+    await ctx.db.patch(donor._id, { availabilityConfirmedAt: Date.now() });
+    return null;
   },
 });

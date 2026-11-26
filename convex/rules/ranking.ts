@@ -1,8 +1,9 @@
 /**
  * Candidate ranking — PURE TypeScript. Contract: specs §6.10 / PRD §5.3.
- * P0 ships the place-tier ordering skeleton; the full filter set (quiet
- * hours, caps, blocks, verified-only, travel range, no-show tie-breakers)
- * is implemented in P2 when matching goes live (roadmap P2, F-301).
+ * Order (PRD §5.3 steps 2–3): place tier (same thana → neighbours within
+ * S-32 → same district → same division → wider), then exact group before
+ * compatible, most recently active, fewer alerts in the last 7 days, and
+ * finally lower no-show count inside the S-37 window.
  */
 export type RankCandidate = {
   donorProfileId: string;
@@ -11,6 +12,10 @@ export type RankCandidate = {
   divisionId: string;
   lastActiveAt: number;
   alertsLast7Days: number;
+  /** Exact group match for the request (compatible-group donors rank after). */
+  exactGroup?: boolean;
+  /** No-shows inside the S-37 window (lower is better). */
+  noShowCount?: number;
 };
 
 export type RankRequest = {
@@ -49,7 +54,10 @@ export function rankCandidates(
   return [...candidates].sort((a, b) => {
     const tier = placeTier(a, request) - placeTier(b, request);
     if (tier !== 0) return tier;
+    const exact = Number(b.exactGroup ?? true) - Number(a.exactGroup ?? true);
+    if (exact !== 0) return exact;
     if (b.lastActiveAt !== a.lastActiveAt) return b.lastActiveAt - a.lastActiveAt;
-    return a.alertsLast7Days - b.alertsLast7Days;
+    if (a.alertsLast7Days !== b.alertsLast7Days) return a.alertsLast7Days - b.alertsLast7Days;
+    return (a.noShowCount ?? 0) - (b.noShowCount ?? 0);
   });
 }

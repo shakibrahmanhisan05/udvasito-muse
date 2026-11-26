@@ -80,6 +80,17 @@ type Test = ReturnType<typeof newTest>;
 
 async function seedAll(t: Test) {
   await t.mutation(seedSettings, {});
+  // P2 enforces quiet hours (S-21) in matching. This P1 suite predates
+  // that filter and runs on the wall clock, so it pins the seeded quiet
+  // window to empty (start == end = never quiet) to stay deterministic;
+  // quiet-hours behaviour itself is covered in tests/p2.test.ts.
+  await t.run(async (ctx) => {
+    const row = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "quietHours"))
+      .unique();
+    if (row) await ctx.db.patch(row._id, { value: { start: "00:00", end: "00:00" } });
+  });
 }
 
 async function seedPlaces(t: Test) {

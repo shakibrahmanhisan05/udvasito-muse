@@ -203,3 +203,26 @@ export const adminQueryV = roleQueryV(["admin", "superadmin"]);
 export const adminMutationV = roleMutationV(["admin", "superadmin"]);
 export const donorMutationV = memberMutationV;
 export const donorQueryV = memberQueryV;
+
+/**
+ * Read-only owner view (gate G6, specs §1.2): a frozen or suspended
+ * member keeps read access to their own request's live status while
+ * every write stays blocked by `assertActive`. Banned, deletion-pending
+ * and underage accounts are still refused outright.
+ */
+export function ownerViewQueryV<Args extends Validators, Output>(config: {
+  args: Args;
+  handler: Handler<GenericQueryCtx<DataModel>, ObjectType<Args>, Output>;
+}) {
+  return queryGeneric({
+    args: config.args as never,
+    handler: async (ctx, args) => {
+      const profile = await requireAuthProfile(ctx);
+      if (profile.status === "underage_blocked") fail("ERR_UNDERAGE");
+      if (profile.status === "banned" || profile.status === "deletion_pending") {
+        fail("ERR_FROZEN");
+      }
+      return config.handler(Object.assign(ctx, { profile }), args as ObjectType<Args>);
+    },
+  });
+}
