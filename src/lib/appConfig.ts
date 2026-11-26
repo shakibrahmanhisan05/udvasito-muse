@@ -3,6 +3,14 @@
  * The live values come from Convex at runtime (P1 wiring); the bundled
  * fallbacks below mirror the P0 seed defaults so gates behave sanely offline.
  */
+export type VerificationConfig = {
+  telegram: boolean;
+  whatsapp: boolean;
+  inPerson: boolean;
+  telegramBot: string;
+  whatsappNumber: string;
+};
+
 export type AppConfig = {
   minimumAppVersion: string;
   latestAppVersion: string;
@@ -11,6 +19,9 @@ export type AppConfig = {
   practiceAreaEnabled: boolean;
   emailSignInEnabled: boolean;
   apkUrl: string;
+  apkSha256: string;
+  verification: VerificationConfig;
+  aiFeatures: Record<string, boolean>;
 };
 
 export const FALLBACK_APP_CONFIG: AppConfig = {
@@ -21,6 +32,11 @@ export const FALLBACK_APP_CONFIG: AppConfig = {
   practiceAreaEnabled: false,
   emailSignInEnabled: false,
   apkUrl: "",
+  apkSha256: "",
+  // Mirrors the seeded `verification` setting: Telegram + in-person on,
+  // WhatsApp off, no bot username until the admin sets it (RB-5).
+  verification: { telegram: true, whatsapp: false, inPerson: true, telegramBot: "", whatsappNumber: "" },
+  aiFeatures: {},
 };
 
 /** Semver-ish compare for gate G1: is `current` older than `minimum`? */

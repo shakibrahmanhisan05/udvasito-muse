@@ -1,0 +1,42 @@
+import { makeFunctionReference } from "convex/server";
+
+/**
+ * Typed-by-convention function references for the client (the repo pattern:
+ * no generated `api` object is imported by hand-written code — see
+ * convex/auth.ts header). Names must match convex/<module>.ts exports.
+ */
+export const refs = {
+  appConfig: makeFunctionReference<"query">("public:appConfig"),
+  me: makeFunctionReference<"query">("profiles:me"),
+  completeOnboarding: makeFunctionReference<"mutation">("profiles:completeOnboarding"),
+  updateLanguage: makeFunctionReference<"mutation">("profiles:updateLanguage"),
+  updateProfile: makeFunctionReference<"mutation">("profiles:updateProfile"),
+  cancelDeletion: makeFunctionReference<"mutation">("profiles:cancelDeletion"),
+  acceptConsent: makeFunctionReference<"mutation">("consents:accept"),
+  helpline: makeFunctionReference<"query">("support:helpline"),
+  pvStart: makeFunctionReference<"mutation">("phoneVerification:start"),
+  pvStatus: makeFunctionReference<"query">("phoneVerification:status"),
+  pvAcceptMismatch: makeFunctionReference<"mutation">("phoneVerification:acceptMismatch"),
+  pvStartInPerson: makeFunctionReference<"mutation">("phoneVerification:startInPerson"),
+  pvLookupInPerson: makeFunctionReference<"query">("phoneVerification:lookupInPerson"),
+  pvConfirmInPerson: makeFunctionReference<"mutation">("phoneVerification:confirmInPerson"),
+  hospitalsSearch: makeFunctionReference<"query">("hospitals:search"),
+  hospitalsList: makeFunctionReference<"query">("hospitals:list"),
+  hospitalsBloodBanksNear: makeFunctionReference<"query">("hospitals:bloodBanksNear"),
+  placesList: makeFunctionReference<"query">("places:list"),
+  donorsUpsert: makeFunctionReference<"mutation">("donors:upsert"),
+  donorsGetMine: makeFunctionReference<"query">("donors:getMine"),
+  requestsCreate: makeFunctionReference<"mutation">("requests:create"),
+  requestsGetForOwner: makeFunctionReference<"query">("requests:getForOwner"),
+  requestsListMine: makeFunctionReference<"query">("requests:listMine"),
+  requestsClose: makeFunctionReference<"mutation">("requests:close"),
+  responsesInbox: makeFunctionReference<"query">("responses:inbox"),
+  responsesGetForDonor: makeFunctionReference<"query">("responses:getForDonor"),
+  responsesMarkOpened: makeFunctionReference<"mutation">("responses:markOpened"),
+  responsesAccept: makeFunctionReference<"mutation">("responses:accept"),
+  responsesDecline: makeFunctionReference<"mutation">("responses:decline"),
+  notificationsMarkOpened: makeFunctionReference<"mutation">("notifications:markOpened"),
+  pushRegisterExpoToken: makeFunctionReference<"mutation">("push:registerExpoToken"),
+  pushUnregister: makeFunctionReference<"mutation">("push:unregister"),
+  pushSendTest: makeFunctionReference<"mutation">("push:sendTest"),
+};
