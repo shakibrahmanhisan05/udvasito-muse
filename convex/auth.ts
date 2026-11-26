@@ -1,5 +1,5 @@
 import { createClient, type AuthFunctions, type GenericCtx } from "@convex-dev/better-auth";
-import { convex } from "@convex-dev/better-auth/plugins";
+import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
@@ -103,7 +103,20 @@ export function createAuth(ctx: GenericCtx<DataModel>) {
     baseURL: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: authComponent.adapter(ctx),
-    plugins: [expo(), convex({ authConfig })],
+    // expo(): native deep-link origins. crossDomain(): the web app lives
+    // on a different origin than this auth site (Vercel vs .convex.site) —
+    // it trusts SITE_URL, stores OAuth state in the database, skips the
+    // state-cookie check (the client keeps its cookie jar client-side),
+    // and rewrites post-sign-in redirects back to the web app. Without it
+    // (and without CORS routes in http.ts) the browser blocks the sign-in
+    // fetch at preflight and Google sign-in dies before it starts —
+    // found live 2026-11-26, after the adapter fix (PR #23) had already
+    // made the endpoint itself return 200 to non-browser probes.
+    plugins: [
+      expo(),
+      ...(process.env.SITE_URL ? [crossDomain({ siteUrl: process.env.SITE_URL })] : []),
+      convex({ authConfig }),
+    ],
     socialProviders: googleConfigured
       ? {
           google: {

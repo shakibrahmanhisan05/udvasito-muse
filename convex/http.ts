@@ -19,7 +19,14 @@ import { authComponent, createAuth } from "./auth";
  */
 const http = httpRouter();
 
-authComponent.registerRoutes(http, createAuth);
+// cors: true is REQUIRED for the web app: it lives on a different origin
+// (Vercel) than this auth site, so the browser preflights every auth
+// fetch. Without it no OPTIONS routes exist (preflight 404) and no CORS
+// headers are emitted — sign-in failed instantly in the browser while
+// curl probes returned 200 (found live 2026-11-26). Allowed origins come
+// from the auth options' trustedOrigins (the crossDomain plugin adds
+// SITE_URL), with credentials allowed.
+authComponent.registerRoutes(http, createAuth, { cors: true });
 
 const handleTelegramUpdate = makeFunctionReference<"mutation">(
   "phoneVerification:handleTelegramUpdate",
