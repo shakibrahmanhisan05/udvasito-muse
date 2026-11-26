@@ -59,6 +59,22 @@ export default function Welcome() {
             {row.text}
           </Text>
         ))}
+        <View style={styles.legalRow}>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push("/(onboarding)/privacy")}
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalText}>{t("welcome.privacy")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push("/(onboarding)/terms")}
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalText}>{t("welcome.terms")}</Text>
+          </Pressable>
+        </View>
       </View>
 
       <Pressable
@@ -130,4 +146,7 @@ const styles = StyleSheet.create({
   checkmark: { color: "#fff", fontWeight: "700" },
   consentText: { ...typography.body, color: colors.text.primary, flex: 1 },
   footer: { ...typography.small, color: colors.text.muted, textAlign: "center" },
+  legalRow: { flexDirection: "row", gap: spacing.lg },
+  legalLink: { minHeight: 48, justifyContent: "center" },
+  legalText: { ...typography.bodyStrong, color: colors.brand.primary },
 });

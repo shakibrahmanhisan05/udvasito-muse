@@ -6,6 +6,7 @@
 import { internalMutationGeneric, queryGeneric } from "convex/server";
 import { v } from "convex/values";
 import type { DataModel, Id } from "./schemaTypes";
+import { eqRange } from "./_lib/db";
 
 const placeRow = v.object({
   level: v.union(v.literal("division"), v.literal("district"), v.literal("upazila")),
@@ -92,3 +93,24 @@ export const children = queryGeneric({
 
 // Referenced so the DataModel import stays meaningful for future functions.
 export type PlacesDataModel = DataModel;
+
+/**
+ * places.list (specs §6.2) — picker data by level + parent id, with
+ * coordinates (the request form's distance display uses them). Public:
+ * names and centres only, no personal data.
+ */
+export const list = queryGeneric({
+  args: {
+    level: v.union(v.literal("division"), v.literal("district"), v.literal("upazila")),
+    parentId: v.optional(v.id("places")),
+  },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("places")
+      .withIndex("by_level_parent", eqRange([["level", args.level], ["parentId", args.parentId]]))
+      .collect();
+    return rows
+      .map((r) => ({ _id: r._id, nameEn: r.nameEn, nameBn: r.nameBn, lat: r.lat, lng: r.lng }))
+      .sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+  },
+});

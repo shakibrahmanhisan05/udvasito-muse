@@ -184,3 +184,7 @@ Tests written in this phase (build-prompts P0 list): settings reader defaults + 
 ## Next session starts with
 
 **P1 — Walking skeleton** (roadmap §3/P1, build-prompts §2): consent screen + legal pages wiring (`consents.accept`), sign-in → onboarding with the 18+ gate, Telegram + in-person phone verification, donor setup, request form + wave 1, push, accept → mutual reveal, close. Pre-flight: Human steps A2 (CLI link) + B (OAuth) done or in progress; the full §3 copy merge (D5) lands before P1 screens multiply.
+
+---
+
+**Addendum (P1, 2026-11-26):** the post-merge i18n pack brought the key count to **489 keys per language** (EN/BN parity verified), superseding the counts quoted in the P0 body above.
