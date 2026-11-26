@@ -20,7 +20,14 @@ import { recordEvent } from "./events";
 
 type Lang = "en" | "bn";
 
-type Template = { title: string; body: string; bodyDonorCalls?: string; urgentPrefix?: string };
+type Template = {
+  title: string;
+  body: string;
+  bodyDonorCalls?: string;
+  urgentPrefix?: string;
+  /** Alternate wording for the same template id (NTF-15 rejection). */
+  rejected?: { title: string; body: string };
+};
 
 const TEMPLATES: Record<string, Record<Lang, Template>> = {
   "NTF-01": {
@@ -33,6 +40,44 @@ const TEMPLATES: Record<string, Record<Lang, Template>> = {
       title: "{{urgent}}{{group}} {{component}} প্রয়োজন · {{hospital}}",
       urgentPrefix: "জরুরি · ",
       body: "{{units}} ব্যাগ, {{time}}-এর মধ্যে · {{km}} কিমি। উত্তর দিতে ট্যাপ করুন।",
+    },
+  },
+  "NTF-02": {
+    en: {
+      title: "A volunteer asked you: {{group}} {{component}} · {{hospital}}",
+      urgentPrefix: "URGENT · ",
+      body: "{{units}} bag(s) by {{time}} · {{km}} km. Tap to answer.",
+    },
+    bn: {
+      title: "একজন স্বেচ্ছাসেবক অনুরোধ করেছেন: {{group}} {{component}} · {{hospital}}",
+      urgentPrefix: "জরুরি · ",
+      body: "{{units}} ব্যাগ, {{time}}-এর মধ্যে · {{km}} কিমি। উত্তর দিতে ট্যাপ করুন।",
+    },
+  },
+  "NTF-03": {
+    en: {
+      title: "New request in {{area}}: {{group}} {{component}}",
+      body: "{{hospital}} · needed by {{time}}",
+    },
+    bn: {
+      title: "{{area}}-এ নতুন অনুরোধ: {{group}} {{component}}",
+      body: "{{hospital}} · {{time}}-এর মধ্যে",
+    },
+  },
+  "NTF-14": {
+    en: { title: "Message from UDVASITO", body: "{{action}}: {{reason}}" },
+    bn: { title: "উদ্ভাসিতের বার্তা", body: "{{action}}: {{reason}}" },
+  },
+  "NTF-15": {
+    en: {
+      title: "Volunteer application approved",
+      body: "Open UDVASITO to start.",
+      rejected: { title: "Volunteer application update", body: "Open UDVASITO to start." },
+    },
+    bn: {
+      title: "স্বেচ্ছাসেবক আবেদন অনুমোদিত",
+      body: "শুরু করতে উদ্ভাসিত খুলুন।",
+      rejected: { title: "স্বেচ্ছাসেবক আবেদনের হালনাগাদ", body: "শুরু করতে উদ্ভাসিত খুলুন।" },
     },
   },
   "NTF-04": {
@@ -159,6 +204,8 @@ export async function notifyUser(
     /** "urgent-requests" for NTF-01/02/07/08/16, else "updates" (§6.8). */
     channelId: "urgent-requests" | "updates";
     donorCallsBody?: boolean;
+    /** Alternate template wording (NTF-15: "rejected"). */
+    variant?: string;
   },
 ): Promise<Id<"notifications">> {
   const lang: Lang = args.recipient.language === "bn" ? "bn" : "en";
@@ -177,11 +224,13 @@ export async function notifyUser(
     failure = "unknown_template";
   } else {
     const params = { ...args.params };
-    if (args.template === "NTF-01") {
+    if (args.template === "NTF-01" || args.template === "NTF-02") {
       params.urgent = params.urgent === "1" ? tpl.urgentPrefix ?? "" : "";
     }
-    const title = render(tpl.title, params);
-    const body = render(args.donorCallsBody && tpl.bodyDonorCalls ? tpl.bodyDonorCalls : tpl.body, params);
+    const wording =
+      args.variant === "rejected" && tpl.rejected ? tpl.rejected : tpl;
+    const title = render(wording.title, params);
+    const body = render(args.donorCallsBody && tpl.bodyDonorCalls ? tpl.bodyDonorCalls : wording.body, params);
     try {
       const pushId = await push.sendPushNotification(ctx, {
         userId: args.recipient.authUserId,

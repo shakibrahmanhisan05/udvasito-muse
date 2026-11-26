@@ -20,4 +20,14 @@ crons.hourly(
   {},
 );
 
+// P3 (F-603): the daily retention job — account deletions per PRD §5.9,
+// S-35 personal-field purge, S-26 slip deletion, S-36 AI log retention,
+// event rollups. 03:00 Asia/Dhaka = 21:00 UTC.
+crons.daily(
+  "retention-daily",
+  { hourUTC: 21, minuteUTC: 0 },
+  makeFunctionReference<"mutation">("retention:daily"),
+  {},
+);
+
 export default crons;

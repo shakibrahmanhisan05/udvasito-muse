@@ -5,7 +5,7 @@ import { donorMutationV, donorQueryV } from "./_lib/auth";
 import { fail } from "./_lib/errors";
 import { getRulesSettings, getSetting } from "./_lib/settings";
 import { recordEvent } from "./_lib/events";
-import { recordContactReveal, phoneOf } from "./_lib/visibility";
+import { recordContactReveal, phoneOf, requesterUnderRevealCap } from "./_lib/visibility";
 import { notifyUser } from "./_lib/notify";
 import { eqRange } from "./_lib/db";
 import { groupsFor } from "./rules/compatibility";
@@ -351,15 +351,8 @@ export const accept = donorMutationV({
         // "I'll call them" (D16 — donor_calls) or the requester has hit
         // the daily reveal cap (S-23, F-802).
         if (args.callMode === "mutual") {
-          const revealCap = await getSetting<number>(ctx, "revealsPerRequesterPerDay");
-          const requesterReveals = await ctx.db
-            .query("contactReveals")
-            .withIndex("by_viewer_request", eqRange([["viewerId", requester!._id]]))
-            .collect();
-          const receivedToday = requesterReveals.filter(
-            (r) => r._creationTime >= startOfDhakaDay(now),
-          ).length;
-          if (receivedToday < revealCap) {
+          // S-23 cap via the shared helper (also used by promotions).
+          if (await requesterUnderRevealCap(ctx, requester!._id, now)) {
             await recordContactReveal(ctx, {
               viewer: requester!,
               subject: ctx.profile,
@@ -373,7 +366,7 @@ export const accept = donorMutationV({
             await recordEvent(ctx, "reveal_cap_reached", {
               requestId: req._id,
               actorRole: "system",
-              props: { cap: revealCap },
+              props: { cap: await getSetting<number>(ctx, "revealsPerRequesterPerDay") },
               isDemo: req.isDemo,
             });
           }

@@ -209,6 +209,26 @@ export function validateDonorForm(input: DonorFormInput, now: number): Validatio
 }
 
 // ── VAL-26 · in-person verification code ─────────────────────────────
+// ── VAL-18 · reason for admin/volunteer actions (5–200 chars) ───────
+export function validateReason(value: string, field = "reason"): ValidationResult {
+  const reason = value.trim();
+  if (reason.length < 5) return failAt(field, "validation.val18.short");
+  if (reason.length > 200) return failAt(field, "validation.val18.long");
+  return { ok: true };
+}
+
+// ── VAL-16 · volunteer application (≥ 1 area; motivation 10–300) ────
+export function validateVolunteerApplication(input: {
+  areaCount: number;
+  motivation: string;
+}): ValidationResult {
+  if (input.areaCount < 1) return failAt("areas", "validation.val16.areas");
+  const motivation = input.motivation.trim();
+  if (motivation.length < 10) return failAt("motivation", "validation.val16.short");
+  if (motivation.length > 300) return failAt("motivation", "validation.val16.long");
+  return { ok: true };
+}
+
 export const IN_PERSON_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export function validateInPersonCode(value: string): ValidationResult {

@@ -40,11 +40,13 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   pushTest: { kind: "fixed window", rate: 3, period: HOUR },
   // specs §6.4: reports.create — 10 per member per day.
   reportCreate: { kind: "fixed window", rate: 10, period: DAY },
+  // PRD §5.8: volunteer donor searches — 30 per volunteer per hour.
+  volunteerSearch: { kind: "fixed window", rate: 30, period: HOUR },
 });
 
 type LimitName =
   | "signUp" | "verificationStart" | "inPersonConfirm" | "helplineFetch" | "pushTest"
-  | "reportCreate";
+  | "reportCreate" | "volunteerSearch";
 
 /** Consume one token or throw ERR_RATE_LIMITED with whole minutes to wait. */
 export async function limitOrThrow(

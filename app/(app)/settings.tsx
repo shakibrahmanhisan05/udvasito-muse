@@ -54,6 +54,11 @@ export default function Settings() {
           variant="secondary"
           onPress={() => router.push("/(onboarding)/terms")}
         />
+        <Button
+          label={t("myData.who")}
+          variant="secondary"
+          onPress={() => router.push("/(app)/my-data")}
+        />
       </View>
       {isAuthConfigured && session.data ? (
         <Button

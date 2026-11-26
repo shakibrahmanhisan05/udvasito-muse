@@ -231,3 +231,85 @@ export const confirmStillAvailable = memberMutationV({
     return null;
   },
 });
+
+/**
+ * donors.updateSettings (specs §6.3, F-308/D09 + V10 opt-in): partial
+ * donor settings — alert limits, quiet hours, travel range, call mode,
+ * the "volunteers may call me" opt-in and profile hiding (D07).
+ * Eligibility and `live` are recomputed whenever they are inputs.
+ */
+export const updateSettings = memberMutationV({
+  args: {
+    plateletOptIn: v.optional(v.boolean()),
+    callMode: v.optional(callMode),
+    volunteersMayCall: v.optional(v.boolean()),
+    verifiedRequestsOnly: v.optional(v.boolean()),
+    alertCapPerDay: v.optional(v.number()),
+    quietStart: v.optional(v.string()),
+    quietEnd: v.optional(v.string()),
+    urgentOverride: v.optional(v.boolean()),
+    hidden: v.optional(v.boolean()),
+    travelRange: v.optional(v.union(v.literal("thana"), v.literal("district"))),
+    gender: v.optional(gender),
+    lastDonationDate: v.optional(v.string()),
+    lastDonationType: v.optional(component),
+  },
+  handler: async (ctx, args) => {
+    const donor = await ctx.db
+      .query("donorProfiles")
+      .withIndex("by_profile", (q) => q.eq("profileId", ctx.profile._id))
+      .unique();
+    if (!donor) fail("ERR_NOT_FOUND");
+    if (
+      args.alertCapPerDay !== undefined &&
+      (!Number.isInteger(args.alertCapPerDay) || args.alertCapPerDay < 1 || args.alertCapPerDay > 10)
+    ) {
+      fail("ERR_VALIDATION", {}, "alertCapPerDay");
+    }
+    const timeOk = (s?: string) => s === undefined || /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+    if (!timeOk(args.quietStart)) fail("ERR_VALIDATION", {}, "quietStart");
+    if (!timeOk(args.quietEnd)) fail("ERR_VALIDATION", {}, "quietEnd");
+    const { plateletOptIn, callMode: mode, volunteersMayCall, verifiedRequestsOnly,
+      alertCapPerDay, quietStart, quietEnd, urgentOverride, hidden, travelRange,
+      gender: g, lastDonationDate, lastDonationType } = args;
+    const patch: Record<string, unknown> = {};
+    if (plateletOptIn !== undefined) patch.plateletOptIn = plateletOptIn;
+    if (mode !== undefined) patch.callMode = mode;
+    if (volunteersMayCall !== undefined) patch.volunteersMayCall = volunteersMayCall;
+    if (verifiedRequestsOnly !== undefined) patch.verifiedRequestsOnly = verifiedRequestsOnly;
+    if (alertCapPerDay !== undefined) patch.alertCapPerDay = alertCapPerDay;
+    if (quietStart !== undefined) patch.quietStart = quietStart;
+    if (quietEnd !== undefined) patch.quietEnd = quietEnd;
+    if (urgentOverride !== undefined) patch.urgentOverride = urgentOverride;
+    if (hidden !== undefined) patch.hidden = hidden;
+    if (travelRange !== undefined) patch.travelRange = travelRange;
+    if (g !== undefined) patch.gender = g;
+    if (lastDonationDate !== undefined) {
+      patch.lastDonationDate = lastDonationDate;
+      patch.neverDonated = false;
+    }
+    if (lastDonationType !== undefined) patch.lastDonationType = lastDonationType;
+    if (Object.keys(patch).length > 0) {
+      if (patch.gender !== undefined || patch.lastDonationDate !== undefined ||
+          patch.lastDonationType !== undefined) {
+        const settings = await getRulesSettings(ctx);
+        const merged = { ...donor!, ...patch } as typeof donor;
+        const { eligibleFrom, eligibleFromPlatelets } = computeEligibility(
+          {
+            gender: merged.gender,
+            neverDonated: merged.neverDonated,
+            lastDonationDate: merged.lastDonationDate,
+            lastDonationType: merged.lastDonationType,
+          },
+          settings,
+        );
+        patch.eligibleFrom = eligibleFrom;
+        patch.eligibleFromPlatelets = eligibleFromPlatelets;
+      }
+      await ctx.db.patch(donor._id, patch);
+    }
+    const fresh = await ctx.db.get(donor._id);
+    if (fresh) await refreshDonorLive(ctx, ctx.profile, fresh);
+    return null;
+  },
+});
