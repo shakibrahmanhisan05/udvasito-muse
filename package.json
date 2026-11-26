@@ -20,7 +20,8 @@
     "seed:settings": "tsx scripts/seed-settings.ts",
     "seed:staging": "tsx scripts/seed-staging.ts",
     "import:hospitals": "tsx scripts/import-hospitals.ts",
-    "build:web": "expo export --platform web"
+    "build:web": "expo export --platform web",
+    "intake:eval": "tsx scripts/intake-eval.ts"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.13.1",
