@@ -45,7 +45,10 @@ void SplashScreen.preventAutoHideAsync();
  * the (app) layout. Sign-in stays honest: until GOOGLE_CLIENT_SECRET is set
  * in Convex env, no session can exist and G4 keeps signed-in routes closed.
  */
-function useGates(fontsLoaded: boolean) {
+function useGates(
+  fontsLoaded: boolean,
+  appConfig: { consentVersion: string } | undefined,
+) {
   const segments = useSegments();
   const router = useRouter();
   const session = authClient.useSession();
@@ -56,7 +59,11 @@ function useGates(fontsLoaded: boolean) {
   // the gate and the member re-consents once. The fallback applies
   // only while the backend is unreachable/unconfigured; for signed-in
   // members ProfileGate's server-side needsConsent is the backstop.
-  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
+  // The appConfig query itself runs in ConfiguredShell — INSIDE the
+  // Convex provider. (It used to run here, but useGates is called from
+  // components that also render outside the provider, and Convex hooks
+  // throw "Could not find Convex client!" without a context — even
+  // with "skip". That crashed the first production web build at boot.)
   const [localVersion, setLocalVersion] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -217,6 +224,48 @@ function PushRegistrar() {
   return null;
 }
 
+/**
+ * Everything that calls Convex hooks lives inside this shell, which only
+ * mounts UNDER ConvexBetterAuthProvider. RootLayout cannot call those
+ * hooks itself: it renders the provider, so its own body runs outside it
+ * (the first production web build crashed at boot for exactly this).
+ */
+function ConfiguredShell({ ready }: { ready: boolean }) {
+  const appConfig = useQuery(refs.appConfig, {});
+  const gates = useGates(ready, appConfig);
+  if (!gates.ready) {
+    // Splash (logo on white) is still up — render nothing behind it.
+    return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
+  }
+  return (
+    <ToastProvider>
+      <OfflineBanner />
+      <ProfileGate />
+      <PushRegistrar />
+      <OutboxFlusher />
+      <Slot />
+    </ToastProvider>
+  );
+}
+
+/**
+ * No backend configured (EXPO_PUBLIC_* unset): the FALLBACK consent
+ * version applies by design, and no Convex hook may mount — the member
+ * sees the honest "not configured" sign-in state (specs §1.9).
+ */
+function UnconfiguredShell({ ready }: { ready: boolean }) {
+  const gates = useGates(ready, undefined);
+  if (!gates.ready) {
+    return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
+  }
+  return (
+    <ToastProvider>
+      <OfflineBanner />
+      <Slot />
+    </ToastProvider>
+  );
+}
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     NotoSans_400Regular,
@@ -244,7 +293,6 @@ export default function RootLayout() {
   }, []);
 
   const ready = fontsLoaded && i18nReady;
-  const gates = useGates(ready);
 
   useEffect(() => {
     // G2: splash for at most the font/i18n load; system fonts are the fallback.
@@ -256,25 +304,16 @@ export default function RootLayout() {
     [],
   );
 
-  if (!ready || !gates.ready) {
+  if (!ready) {
     // Splash (logo on white) is still up — render nothing behind it.
     return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
   }
 
-  const tree = (
-    <ToastProvider>
-      <OfflineBanner />
-      <ProfileGate />
-      <PushRegistrar />
-      <OutboxFlusher />
-      <Slot />
-    </ToastProvider>
-  );
   return convex ? (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      {tree}
+      <ConfiguredShell ready={ready} />
     </ConvexBetterAuthProvider>
   ) : (
-    tree
+    <UnconfiguredShell ready={ready} />
   );
 }
