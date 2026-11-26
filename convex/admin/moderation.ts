@@ -8,6 +8,7 @@ import { recordEvent } from "../_lib/events";
 import { notifyUser } from "../_lib/notify";
 import { refreshDonorLive } from "../_lib/donorLive";
 import { validateReason } from "../rules/validation";
+import { anyFreeze, decisionActionText, type FreezeState } from "../rules/moderation";
 
 /**
  * Moderation queue + decisions (specs §6.4, F-803, SCR-A02/A03).
@@ -168,26 +169,26 @@ const decision = v.union(
   v.literal("suspend"), v.literal("ban"), v.literal("restore"),
 );
 
-/** NTF-14 action wording per decision (the template renders
- *  "{{action}}: {{reason}}" — same pattern as admin.people.setStatus). */
-const ACTION_TEXT: Record<string, string> = {
-  dismiss: "Report reviewed — no action taken",
-  warn: "Warning",
-  hide_request: "Request removed",
-  suspend: "Account suspended",
-  ban: "Account banned",
-  restore: "Account restored",
-};
-
 /** admin.moderation.decide (specs §6.4, SCR-A03): apply a decision.
  *  Every decision requires a reason (VAL-18), closes the item, writes
- *  audit + event, and notifies the affected person (NTF-14). */
+ *  audit + event, and notifies the affected person (NTF-14).
+ *
+ *  Freeze choice (SCR-A03, P5 review F1): dismiss/warn on an item whose
+ *  P2 auto-actions (PRD §5.8) are still in place MUST say what happens
+ *  to them — `freezeChoice: "lift"` undoes the auto-freezes this item
+ *  caused, `"keep"` leaves them in place. Without a choice the call is
+ *  rejected, so no moderator can close such an item by accident, and
+ *  the NTF-14 wording is built from the real outcome
+ *  (rules/moderation.decisionActionText) — it never claims "no action
+ *  taken" while a freeze persists. Restore always lifts (its existing
+ *  meaning); suspend/ban supersede a freeze with their own state. */
 export const decide = adminMutationV({
   args: {
     itemId: v.id("moderationItems"),
     decision,
     reason: v.string(),
     suspendDays: v.optional(v.number()),
+    freezeChoice: v.optional(v.union(v.literal("lift"), v.literal("keep"))),
   },
   handler: async (ctx, args) => {
     const check = validateReason(args.reason);
@@ -202,6 +203,47 @@ export const decide = adminMutationV({
     // The person affected by the decision: the item's subject, or (for
     // request-only items) the requester.
     const affected = subject ?? (request ? await ctx.db.get(request.requesterId) : null);
+
+    // Which of this item's automatic freezes are still in place?
+    const itemReports = await reportsOf(ctx, item._id);
+    const freezes: FreezeState = {
+      account:
+        itemReports.some((r) => r.autoAction === "account_frozen") &&
+        subject?.status === "frozen",
+      reveals:
+        itemReports.some((r) => r.autoAction === "reveals_frozen") &&
+        request?.revealsFrozen === true,
+    };
+    const liftsFreezes =
+      args.decision === "restore" ||
+      ((args.decision === "dismiss" || args.decision === "warn") &&
+        args.freezeChoice === "lift");
+    if (
+      (args.decision === "dismiss" || args.decision === "warn") &&
+      anyFreeze(freezes) &&
+      args.freezeChoice === undefined
+    ) {
+      fail("ERR_VALIDATION", {}, "freezeChoice");
+    }
+
+    if (liftsFreezes && anyFreeze(freezes)) {
+      if (freezes.account && subject) {
+        await ctx.db.patch(subject._id, {
+          status: "active", statusReason: undefined, statusUntil: undefined,
+        });
+        const donor = await ctx.db
+          .query("donorProfiles")
+          .withIndex("by_profile", (q) => q.eq("profileId", subject._id))
+          .unique();
+        if (donor) {
+          const fresh = await ctx.db.get(subject._id);
+          if (fresh) await refreshDonorLive(ctx, fresh, donor);
+        }
+      }
+      if (freezes.reveals && request) {
+        await ctx.db.patch(request._id, { revealsFrozen: false });
+      }
+    }
 
     if (args.decision === "hide_request") {
       if (!request) fail("ERR_VALIDATION", {}, "requestId");
@@ -284,12 +326,26 @@ export const decide = adminMutationV({
         decision: args.decision,
         subjectId: item.subjectId ?? null,
         requestId: item.requestId ?? null,
+        freezeChoice: args.freezeChoice ?? null,
+        freezesLifted: liftsFreezes
+          ? [
+              ...(freezes.account ? ["account"] : []),
+              ...(freezes.reveals ? ["reveals"] : []),
+            ]
+          : [],
       },
     });
     await recordEvent(ctx, "moderation_decided", {
       requestId: item.requestId,
       actorRole: ctx.profile.role,
-      props: { decision: args.decision },
+      props: {
+        decision: args.decision,
+        freeze: liftsFreezes && anyFreeze(freezes)
+          ? "lifted"
+          : anyFreeze(freezes)
+            ? "kept"
+            : "none",
+      },
       isDemo: item.isDemo,
     });
     if (affected) {
@@ -297,7 +353,10 @@ export const decide = adminMutationV({
         recipient: affected,
         template: "NTF-14",
         requestId: item.requestId,
-        params: { action: ACTION_TEXT[args.decision], reason },
+        params: {
+          action: decisionActionText(args.decision, freezes, args.freezeChoice),
+          reason,
+        },
         url: "/account-status",
         channelId: "updates",
       });
