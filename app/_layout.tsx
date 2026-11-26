@@ -23,7 +23,7 @@ import { getLocalConsent } from "@/lib/consent";
 import { FALLBACK_APP_CONFIG, isVersionBelow } from "@/lib/appConfig";
 import { authClient, convexUrl, isAuthConfigured } from "@/lib/auth-client";
 import { refs } from "@/lib/refs";
-import { deviceLabel, getExpoPushToken, getWebPushSubscription } from "@/lib/push";
+import { getExpoPushToken, getWebPushSubscription } from "@/lib/push";
 import { outbox } from "@/lib/outbox";
 import { OfflineBanner, ToastProvider } from "@/components";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -162,11 +162,10 @@ function PushRegistrar() {
       }
       const token = await getExpoPushToken();
       if (token) {
-        await register({
-          token,
-          platform: Platform.OS === "ios" ? "ios" : "android",
-          deviceLabel: deviceLabel(),
-        }).catch(() => {
+        // push.registerExpoToken validates exactly {token} (specs §6.4) —
+        // extra args fail Convex validation and the catch below would
+        // swallow it, silently losing every Android token (P4 review F1).
+        await register({ token }).catch(() => {
           // Push is an enhancement; failure never blocks the app.
         });
       }
