@@ -50,7 +50,7 @@
     "expo-speech-recognition": "~57.1.0",
     "expo-splash-screen": "~57.0.12",
     "expo-status-bar": "~57.0.1",
-    "expo-updates": "~57.0.29",
+    "expo-updates": "~58.0.22",
     "i18next": "^27.2.9",
     "lucide-react-native": "^1.80.0",
     "nativewind": "^4.2.7",
