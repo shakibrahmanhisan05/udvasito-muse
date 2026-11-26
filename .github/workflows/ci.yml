@@ -1,0 +1,23 @@
+name: CI
+
+# ADR-019: on every push — install, type check, lint, tests.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Copy parity (en/bn)
+        run: npm run copy:extract
+      - name: Type check + lint + tests
+        run: npm run check
+      - name: Dependency audit (specs §7.4)
+        run: npm audit --omit=dev --audit-level=high
