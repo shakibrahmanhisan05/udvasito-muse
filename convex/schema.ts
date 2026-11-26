@@ -309,6 +309,9 @@ export default defineSchema({
     model: v.string(), ok: v.boolean(), errorKind: v.optional(v.string()),
     inputRedacted: v.string(), output: v.string(), latencyMs: v.number(),
     profileId: v.optional(v.id("profiles")), isDemo: v.boolean(),
+    // P4: the request draft's idempotency key, when the call came from a
+    // form — lets the S-29 per-request AI cap be counted server-side.
+    clientId: v.optional(v.string()),
   }),                                              // deleted after S-36 days by the retention cron
 
   aiQuota: defineTable({ day: v.string(), model: v.string(), count: v.number() })   // day in America/Los_Angeles (quota reset)

@@ -75,6 +75,7 @@ export default function AppLayout() {
       <Tabs.Screen name="request-new" options={{ href: null }} />
       <Tabs.Screen name="request-live" options={{ href: null }} />
       <Tabs.Screen name="donor-setup" options={{ href: null }} />
+      <Tabs.Screen name="donor/alert-guide" options={{ href: null }} />
       <Tabs.Screen name="alerts" options={{ href: null }} />
       <Tabs.Screen name="alert-detail" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />

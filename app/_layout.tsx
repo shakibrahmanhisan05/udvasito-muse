@@ -23,7 +23,8 @@ import { getLocalConsent } from "@/lib/consent";
 import { FALLBACK_APP_CONFIG, isVersionBelow } from "@/lib/appConfig";
 import { authClient, convexUrl, isAuthConfigured } from "@/lib/auth-client";
 import { refs } from "@/lib/refs";
-import { deviceLabel, getExpoPushToken } from "@/lib/push";
+import { deviceLabel, getExpoPushToken, getWebPushSubscription } from "@/lib/push";
+import { outbox } from "@/lib/outbox";
 import { OfflineBanner, ToastProvider } from "@/components";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -116,15 +117,49 @@ function ProfileGate() {
   return null;
 }
 
-/** Expo Push token registration + notification-opened wiring (§6.8). */
+/**
+ * Offline outbox flush (F-207): on sign-in/app start, post anything
+ * queued while offline. The server dedupes by clientId, so flushing
+ * is always safe to retry.
+ */
+function OutboxFlusher() {
+  const session = authClient.useSession();
+  const create = useMutation(refs.requestsCreate);
+
+  useEffect(() => {
+    if (!session.data || !isAuthConfigured) return;
+    void outbox
+      .flush(async (item) => {
+        await create(item.payload as never);
+      })
+      .catch(() => {
+        // Still offline — the queue keeps the items for next time.
+      });
+  }, [session.data, create]);
+
+  return null;
+}
+
+/** Expo Push token registration + notification-opened wiring (§6.8).
+ *  On web, registers the browser's Web Push subscription instead (F-303). */
 function PushRegistrar() {
   const session = authClient.useSession();
   const register = useMutation(refs.pushRegisterExpoToken);
+  const registerWeb = useMutation(refs.pushRegisterWebSubscription);
   const markOpened = useMutation(refs.notificationsMarkOpened);
 
   useEffect(() => {
     if (!session.data || !isAuthConfigured) return;
     void (async () => {
+      if (Platform.OS === "web") {
+        const subscription = await getWebPushSubscription();
+        if (subscription) {
+          await registerWeb(subscription).catch(() => {
+            // Push is an enhancement; failure never blocks the app.
+          });
+        }
+        return;
+      }
       const token = await getExpoPushToken();
       if (token) {
         await register({
@@ -136,7 +171,7 @@ function PushRegistrar() {
         });
       }
     })();
-  }, [session.data, register]);
+  }, [session.data, register, registerWeb]);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -193,6 +228,7 @@ export default function RootLayout() {
       <OfflineBanner />
       <ProfileGate />
       <PushRegistrar />
+      <OutboxFlusher />
       <Slot />
     </ToastProvider>
   );

@@ -42,11 +42,13 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   reportCreate: { kind: "fixed window", rate: 10, period: DAY },
   // PRD §5.8: volunteer donor searches — 30 per volunteer per hour.
   volunteerSearch: { kind: "fixed window", rate: 30, period: HOUR },
+  // specs §6.1: intake.parse — 10 per member per hour.
+  intakeParse: { kind: "fixed window", rate: 10, period: HOUR },
 });
 
 type LimitName =
   | "signUp" | "verificationStart" | "inPersonConfirm" | "helplineFetch" | "pushTest"
-  | "reportCreate" | "volunteerSearch";
+  | "reportCreate" | "volunteerSearch" | "intakeParse";
 
 /** Consume one token or throw ERR_RATE_LIMITED with whole minutes to wait. */
 export async function limitOrThrow(

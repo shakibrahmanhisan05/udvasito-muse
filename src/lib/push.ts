@@ -34,3 +34,64 @@ export async function getExpoPushToken(): Promise<string | null> {
 export function deviceLabel(): string {
   return `${Platform.OS} · ${Constants.expoConfig?.name ?? "UDVASITO"}`;
 }
+
+// ── Web Push (F-303) ───────────────────────────────────────────────────
+
+export type WebPushSubscriptionData = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userAgent?: string;
+};
+
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(b64);
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+function bufferToBase64Url(buf: ArrayBuffer | null): string {
+  if (!buf) return "";
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return window.btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/**
+ * Subscribe this browser to Web Push and return the subscription for
+ * push.registerWebSubscription — or null when Web Push cannot work
+ * here: not web, no service worker/PushManager (e.g. iPhone Safari
+ * before "Add to Home Screen", iOS 16.4+), no VAPID public key in the
+ * build env, or permission denied. Null is honest: callers show the
+ * alert guide's iOS note instead of pretending alerts are on.
+ */
+export async function getWebPushSubscription(): Promise<WebPushSubscriptionData | null> {
+  if (Platform.OS !== "web") return null;
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+    const vapidPublicKey = process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidPublicKey) return null;
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return null;
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    const subscription =
+      existing ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      }));
+    return {
+      endpoint: subscription.endpoint,
+      p256dh: bufferToBase64Url(subscription.getKey("p256dh")),
+      auth: bufferToBase64Url(subscription.getKey("auth")),
+      userAgent: navigator.userAgent,
+    };
+  } catch {
+    return null;
+  }
+}
