@@ -64,6 +64,7 @@ export default defineSchema({
     eligibleFromPlatelets: v.number(),
     callMode,                                     // D16 default per donor
     volunteersMayCall: v.boolean(),               // V10 opt-in
+    emailCopyOptIn: v.optional(v.boolean()),      // F-307 (P7): email copy of alerts, opt-in
     verifiedRequestsOnly: v.boolean(),
     alertCapPerDay: v.number(),                   // default S-20
     quietStart: v.string(), quietEnd: v.string(), // "HH:mm"

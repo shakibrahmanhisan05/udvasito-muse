@@ -39,4 +39,14 @@ crons.daily(
   {},
 );
 
+// P7 (F-505): donor reminders — NTF-11 eligible-again + NTF-12 S-28
+// availability nudges (specs §6.6 daily row), five minutes after the
+// retention job in the same 03:00 Dhaka window.
+crons.daily(
+  "reminders-daily",
+  { hourUTC: 21, minuteUTC: 5 },
+  makeFunctionReference<"mutation">("reminders:daily"),
+  {},
+);
+
 export default crons;

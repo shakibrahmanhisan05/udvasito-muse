@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { memberMutationV, memberQueryV } from "./_lib/auth";
 import { fail } from "./_lib/errors";
-import { getRulesSettings, getSetting } from "./_lib/settings";
+import { featureOn, getRulesSettings, getSetting } from "./_lib/settings";
 import { recordEvent } from "./_lib/events";
 import { computeDonorLive, refreshDonorLive } from "./_lib/donorLive";
 import { computeEligibility } from "./rules/eligibility";
@@ -241,6 +241,7 @@ export const confirmStillAvailable = memberMutationV({
 export const updateSettings = memberMutationV({
   args: {
     plateletOptIn: v.optional(v.boolean()),
+    emailCopyOptIn: v.optional(v.boolean()),
     callMode: v.optional(callMode),
     volunteersMayCall: v.optional(v.boolean()),
     verifiedRequestsOnly: v.optional(v.boolean()),
@@ -260,6 +261,20 @@ export const updateSettings = memberMutationV({
       .withIndex("by_profile", (q) => q.eq("profileId", ctx.profile._id))
       .unique();
     if (!donor) fail("ERR_NOT_FOUND");
+    // P7 (F-308, switch `alertLimits`): the limit fields (daily cap,
+    // quiet hours + urgent override, verified-only, travel range) ship
+    // behind their switch; the core privacy fields stay live.
+    const limitFields = [
+      args.alertCapPerDay, args.quietStart, args.quietEnd,
+      args.urgentOverride, args.verifiedRequestsOnly, args.travelRange,
+    ];
+    if (limitFields.some((f) => f !== undefined) && !(await featureOn(ctx, "alertLimits"))) {
+      fail("ERR_VALIDATION", {}, "feature");
+    }
+    // F-307: the email-copy opt-in is gated on its own switch.
+    if (args.emailCopyOptIn !== undefined && !(await featureOn(ctx, "emailAlerts"))) {
+      fail("ERR_VALIDATION", {}, "feature");
+    }
     if (
       args.alertCapPerDay !== undefined &&
       (!Number.isInteger(args.alertCapPerDay) || args.alertCapPerDay < 1 || args.alertCapPerDay > 10)
@@ -269,11 +284,12 @@ export const updateSettings = memberMutationV({
     const timeOk = (s?: string) => s === undefined || /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
     if (!timeOk(args.quietStart)) fail("ERR_VALIDATION", {}, "quietStart");
     if (!timeOk(args.quietEnd)) fail("ERR_VALIDATION", {}, "quietEnd");
-    const { plateletOptIn, callMode: mode, volunteersMayCall, verifiedRequestsOnly,
+    const { plateletOptIn, emailCopyOptIn, callMode: mode, volunteersMayCall, verifiedRequestsOnly,
       alertCapPerDay, quietStart, quietEnd, urgentOverride, hidden, travelRange,
       gender: g, lastDonationDate, lastDonationType } = args;
     const patch: Record<string, unknown> = {};
     if (plateletOptIn !== undefined) patch.plateletOptIn = plateletOptIn;
+    if (emailCopyOptIn !== undefined) patch.emailCopyOptIn = emailCopyOptIn;
     if (mode !== undefined) patch.callMode = mode;
     if (volunteersMayCall !== undefined) patch.volunteersMayCall = volunteersMayCall;
     if (verifiedRequestsOnly !== undefined) patch.verifiedRequestsOnly = verifiedRequestsOnly;
@@ -311,5 +327,65 @@ export const updateSettings = memberMutationV({
     const fresh = await ctx.db.get(donor._id);
     if (fresh) await refreshDonorLive(ctx, ctx.profile, fresh);
     return null;
+  },
+});
+
+/** Milestone badges (F-506/D12): earned at 1, 5, 10 and 25 donations. */
+export const BADGE_MILESTONES = [1, 5, 10, 25] as const;
+
+/**
+ * donors.history (specs §6.3, F-506/D12, switch `donorHistory`) — the
+ * caller's donor-confirmed donations (their own outcome drives both the
+ * history and the cooldown), newest first, with the total, the badges
+ * earned and the next whole-blood eligible date. Off → empty.
+ */
+export const history = memberQueryV({
+  args: {},
+  handler: async (ctx) => {
+    const empty = {
+      donations: [] as {
+        date: number;
+        hospitalName: string;
+        group: string;
+        component: string;
+      }[],
+      total: 0,
+      badges: [] as number[],
+      nextEligibleAt: undefined as number | undefined,
+    };
+    if (!(await featureOn(ctx, "donorHistory"))) return empty;
+    const donor = await ctx.db
+      .query("donorProfiles")
+      .withIndex("by_profile", (q) => q.eq("profileId", ctx.profile._id))
+      .unique();
+    if (!donor) return empty;
+    const responses = await ctx.db
+      .query("responses")
+      .withIndex("by_donor_state", (q) => q.eq("donorId", ctx.profile._id))
+      .collect();
+    const donated = responses.filter((r) => r.outcomeDonor === "donated");
+    const donations = [];
+    for (const r of donated) {
+      const request = await ctx.db.get(r.requestId);
+      if (!request) continue;
+      let hospitalName = request.placeText ?? "";
+      if (request.hospitalId) {
+        const hospital = await ctx.db.get(request.hospitalId);
+        hospitalName = hospital?.nameEn ?? hospitalName;
+      }
+      donations.push({
+        date: r.outcomeDonorAt ?? r.confirmedAt ?? r.notifiedAt,
+        hospitalName,
+        group: request.bloodGroup as string,
+        component: request.component as string,
+      });
+    }
+    donations.sort((a, b) => b.date - a.date);
+    return {
+      donations,
+      total: donations.length,
+      badges: BADGE_MILESTONES.filter((m) => donations.length >= m),
+      nextEligibleAt: donor.eligibleFrom,
+    };
   },
 });
