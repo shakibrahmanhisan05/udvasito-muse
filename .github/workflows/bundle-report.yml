@@ -1,0 +1,28 @@
+name: bundle-report
+
+# X03 (specs §7.1): export the production web bundle and measure the
+# entry chunk against the 600 KB gzip budget. This job is EXPECTED
+# to fail until route-level code splitting lands (P7) — the P6
+# measurement is 1,161,940 B gzip in a single bundle; see
+# docs/dev/P6-REPORT.md. It is deliberately not a required status
+# check yet; it exists so every PR shows the real number.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  bundle:
+    name: web bundle size vs 600 KB budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Production web export
+        run: npm run build:web
+      - name: Measure entry bundle (gzip)
+        run: node scripts/measure-bundle.mjs
