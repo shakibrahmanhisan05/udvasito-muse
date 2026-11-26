@@ -15,13 +15,23 @@ import { formatTimeDhaka } from "@/lib/geo";
  * the live/not-live state with reasons, and the route to alerts + setup.
  * Availability controls (SCR-D05) arrive in P2.
  */
+/**
+ * Unkeyed labels (flagged in P7-REPORT for member 3): the SCR-D06
+ * screen name and the NTF-12 "still available" confirm action have no
+ * i18n keys in specs §4. EN from the specs screen name / story D11.
+ */
+const HISTORY_LABEL = { en: "Donation history", bn: "রক্তদানের ইতিহাস" } as const;
+const STILL_AVAILABLE_LABEL = { en: "I'm still available", bn: "আমি এখনো প্রস্তুত আছি" } as const;
+
 export default function Donor() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
   const lang = i18n.language === "bn" ? "bn" : "en";
   const mine = useQuery(refs.donorsGetMine, isAuthConfigured ? {} : "skip");
   const inbox = useQuery(refs.responsesInbox, isAuthConfigured && mine?.donor ? {} : "skip");
   const setAvailability = useMutation(refs.donorsSetAvailability);
+  const confirmStillAvailable = useMutation(refs.donorsConfirmStillAvailable);
   const [now] = useState(() => Date.now());
   const [pauseOpen, setPauseOpen] = useState(false);
   const [availError, setAvailError] = useState<string | null>(null);
@@ -138,6 +148,25 @@ export default function Donor() {
         variant="ghost"
         onPress={() => router.push("/(app)/donor/alert-guide")}
       />
+      <Button
+        label={t("donorSettings.title")}
+        variant="ghost"
+        onPress={() => router.push("/(app)/donor/settings")}
+      />
+      {appConfig?.features?.donorHistory === true ? (
+        <Button
+          label={HISTORY_LABEL[lang]}
+          variant="ghost"
+          onPress={() => router.push("/(app)/donor/history")}
+        />
+      ) : null}
+      {appConfig?.features?.reminders === true && mine?.live ? (
+        <Button
+          label={STILL_AVAILABLE_LABEL[lang]}
+          variant="secondary"
+          onPress={() => void confirmStillAvailable({}).catch(() => {})}
+        />
+      ) : null}
     </ScrollView>
   );
 }

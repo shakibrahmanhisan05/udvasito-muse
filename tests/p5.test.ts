@@ -893,9 +893,11 @@ describe("P5 slice 3 — audit viewer + read-only settings", () => {
     const fresh = await insertProfile(t, { name: "Fresh Member" });
     expect(await codeOf(fresh.asUser.query(auditList, { paginationOpts: { numItems: 5, cursor: null } })))
       .toBe("ERR_FORBIDDEN");
-    // The module exports no mutation at all — nothing to call to edit history.
+    // The audit module exports no mutation at all — nothing to call
+    // to edit history. (admin/settings gained `update` in P7: F-904's
+    // if-time part, switch-gated + audited — see tests/p7.test.ts.)
     expect(Object.keys(adminAuditModule)).toEqual(["list"]);
-    expect(Object.keys(adminSettingsModule)).toEqual(["list"]);
+    expect(Object.keys(adminSettingsModule).sort()).toEqual(["list", "update"]);
   });
 
   it("settings list shows every def with value, range and ref; stored overrides win", async () => {

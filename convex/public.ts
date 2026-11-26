@@ -1,5 +1,7 @@
 import { queryGeneric } from "convex/server";
-import { getSetting } from "./_lib/settings";
+import { v } from "convex/values";
+import { featureOn, getSetting } from "./_lib/settings";
+import { COMPONENT_LABEL, formatTimeDhaka } from "./_lib/notify";
 
 /**
  * public.appConfig (specs §6.1) — unauthenticated, safe-to-cache config the
@@ -49,6 +51,37 @@ export const appConfig = queryGeneric({
       aiFeatures,
       contactEmail,
       medicalReviewer,
+    };
+  },
+});
+
+/**
+ * public.sharedRequestBySlug (F-1002) — the server-side lookup the
+ * Vercel /r/<slug> function (api/r/[slug].ts, ADR-006) uses for Open
+ * Graph tags. Same gates as requests.publicView: features.sharedLinks
+ * on, never practice, never moderation-hidden; anything else is null
+ * and the function serves its branded 404. Anonymised fields only.
+ */
+export const sharedRequestBySlug = queryGeneric({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "sharedLinks"))) return null;
+    const request = await ctx.db
+      .query("requests")
+      .withIndex("by_publicSlug", (q) => q.eq("publicSlug", args.slug))
+      .unique();
+    if (!request || request.isDemo || request.hiddenByModerator) return null;
+    const hospital = request.hospitalId
+      ? await ctx.db.get(request.hospitalId)
+      : undefined;
+    const upazila = await ctx.db.get(request.upazilaId);
+    const lang = "en" as const;
+    return {
+      bloodGroup: request.bloodGroup,
+      component: COMPONENT_LABEL[lang][request.component] ?? request.component,
+      hospitalName: hospital?.nameEn ?? request.hospitalFreeText ?? "",
+      area: upazila?.nameEn ?? "",
+      neededByText: formatTimeDhaka(request.neededBy),
     };
   },
 });

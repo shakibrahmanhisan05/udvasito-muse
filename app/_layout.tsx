@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { Platform, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
-import * as Notifications from "expo-notifications";
 import { useFonts } from "expo-font";
 // Per-weight subpath imports (P6 perf): importing the package roots
 // registers EVERY weight/italic as a bundled asset (27 TTFs ≈ 17 MB
@@ -17,20 +16,26 @@ import { ConvexReactClient, useMutation, useQuery } from "convex/react";
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import Constants from "expo-constants";
 import { initI18n } from "@/lib/i18n";
-import { initSentry } from "@/lib/sentry";
 import { getLocalConsent, consentSatisfies } from "@/lib/consent";
 import { FALLBACK_APP_CONFIG, isVersionBelow } from "@/lib/appConfig";
 import { authClient, convexUrl, isAuthConfigured } from "@/lib/auth-client";
 import { refs } from "@/lib/refs";
-import { getExpoPushToken, getWebPushSubscription } from "@/lib/push";
 import { outbox } from "@/lib/outbox";
-import { OfflineBanner, ToastProvider } from "@/components";
+// Direct file imports (not the "@/components" barrel): the barrel pulls
+// Markdown/PlacePickers and their data into every importer's chunk; the
+// root shell needs only these two (P7/X03 bundle budget).
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { ToastProvider } from "@/components/Toast";
 import type { Id } from "@/convex/_generated/dataModel";
 
 export { ErrorBoundary } from "expo-router";
 
 void SplashScreen.preventAutoHideAsync();
-initSentry();
+// Sentry is initialised lazily from RootLayout's first effect (dynamic
+// import): @sentry/react-native's web graph (browser SDK + replay +
+// feedback) is ~90% of this chunk's pre-split weight and is never needed
+// to render the first screen. The scrubber configuration is unchanged —
+// it lives in lib/sentry and applies from the moment init runs.
 
 /**
  * Root layout — providers + global gates G1–G7 (specs §1.5), in order.
@@ -162,6 +167,9 @@ function PushRegistrar() {
   useEffect(() => {
     if (!session.data || !isAuthConfigured) return;
     void (async () => {
+      // lib/push (expo-notifications) loads lazily: push registration is
+      // a signed-in enhancement, never part of the first-screen shell.
+      const { getExpoPushToken, getWebPushSubscription } = await import("@/lib/push");
       if (Platform.OS === "web") {
         const subscription = await getWebPushSubscription();
         if (subscription) {
@@ -185,17 +193,26 @@ function PushRegistrar() {
 
   useEffect(() => {
     if (Platform.OS === "web") return;
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as {
-        notificationId?: string;
-      };
-      if (data?.notificationId) {
-        void markOpened({
-          notificationId: data.notificationId as Id<"notifications">,
-        }).catch(() => {});
-      }
+    let remove: (() => void) | undefined;
+    let cancelled = false;
+    void import("expo-notifications").then((Notifications) => {
+      if (cancelled) return;
+      const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as {
+          notificationId?: string;
+        };
+        if (data?.notificationId) {
+          void markOpened({
+            notificationId: data.notificationId as Id<"notifications">,
+          }).catch(() => {});
+        }
+      });
+      remove = () => sub.remove();
     });
-    return () => sub.remove();
+    return () => {
+      cancelled = true;
+      remove?.();
+    };
   }, [markOpened]);
   return null;
 }
@@ -213,6 +230,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     void initI18n().then(() => setI18nReady(true));
+  }, []);
+
+  // Deferred Sentry init (see the note at the top of this file): the
+  // dynamic import keeps the SDK out of the shell chunk on web; on
+  // native it resolves immediately. No DSN → initSentry is a no-op.
+  useEffect(() => {
+    void import("@/lib/sentry")
+      .then((m) => m.initSentry())
+      .catch(() => {
+        // Error reporting is an enhancement; never block the app on it.
+      });
   }, []);
 
   const ready = fontsLoaded && i18nReady;

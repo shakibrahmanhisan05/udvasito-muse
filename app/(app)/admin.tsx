@@ -67,6 +67,7 @@ export default function AdminDashboard() {
     | { data: DashboardData; computedAt: number }
     | null
     | undefined;
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
   const recompute = useMutation(refs.statsRecompute);
 
   if (snapshot === null) {
@@ -199,11 +200,13 @@ export default function AdminDashboard() {
                 />
               ))}
             </View>
-            {d.participation.campaignSignups.map((row) => (
-              <Text key={row.code} style={styles.body}>
-                {row.code} • {row.count}
-              </Text>
-            ))}
+            {appConfig?.features?.campaignStats === true
+              ? d.participation.campaignSignups.map((row) => (
+                  <Text key={row.code} style={styles.body}>
+                    {row.code} • {row.count}
+                  </Text>
+                ))
+              : null}
             {d.participation.availabilityFreshnessPct !== null ? (
               <Text style={styles.help}>
                 {`${Math.round(d.participation.availabilityFreshnessPct)}%`}

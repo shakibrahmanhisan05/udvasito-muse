@@ -10,6 +10,9 @@ import { refs } from "@/lib/refs";
 import { errorText } from "@/lib/errors";
 import type { Id } from "@/convex/_generated/dataModel";
 
+/** F-708 entry label — no keyed campaign copy exists (P7 gap list). */
+const CAMPAIGNS_LABEL = "Campus campaigns";
+
 type BoardItem = {
   requestId: Id<"requests">;
   bloodGroup: string;
@@ -31,6 +34,7 @@ export default function Volunteer() {
   const { t } = useTranslation();
   const router = useRouter();
   const me = useQuery(refs.me, isAuthConfigured ? {} : "skip");
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
   const board = useQuery(
     refs.volunteersBoard,
     isAuthConfigured && me?.volunteer ? {} : "skip",
@@ -126,6 +130,36 @@ export default function Volunteer() {
           onPress={() => router.push("/(app)/verify-in-person")}
         />
       </View>
+
+      {appConfig?.features?.campaignStats === true ? (
+        <View style={styles.card}>
+          <Button
+            label={CAMPAIGNS_LABEL}
+            variant="secondary"
+            onPress={() => router.push("/(app)/campaigns")}
+          />
+        </View>
+      ) : null}
+
+      {appConfig?.features?.volunteerPost === true ? (
+        <View style={styles.card}>
+          <Button
+            label={t("volunteerPost.label")}
+            variant="secondary"
+            onPress={() => router.push("/(app)/volunteer-post")}
+          />
+        </View>
+      ) : null}
+
+      {appConfig?.features?.slips === true ? (
+        <View style={styles.card}>
+          <Button
+            label={t("slips.title")}
+            variant="secondary"
+            onPress={() => router.push("/(app)/volunteer-slips")}
+          />
+        </View>
+      ) : null}
     </ScrollView>
   );
 }

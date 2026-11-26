@@ -2,7 +2,7 @@ import { mutationGeneric, queryGeneric } from "convex/server";
 import { v } from "convex/values";
 import { getAuthProfile, memberMutationV, memberQueryV } from "./_lib/auth";
 import { fail } from "./_lib/errors";
-import { getSetting } from "./_lib/settings";
+import { featureOn, getSetting } from "./_lib/settings";
 import { writeAudit } from "./_lib/audit";
 import { recordEvent } from "./_lib/events";
 import { limitOrThrow } from "./_lib/ratelimit";
@@ -194,6 +194,9 @@ export const updateLanguage = memberMutationV({
 export const updateProfile = memberMutationV({
   args: { name: v.optional(v.string()), phone: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    // P7 (F-105, switch `editProfile`): profile editing ships behind its
+    // feature switch; while off the mutation is inert.
+    if (!(await featureOn(ctx, "editProfile"))) fail("ERR_VALIDATION", {}, "feature");
     const patch: Record<string, unknown> = {};
     if (args.name !== undefined) {
       const check = validateName(args.name);

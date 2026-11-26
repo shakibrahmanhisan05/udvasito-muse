@@ -74,8 +74,15 @@ export default function AppLayout() {
       {/* Non-tab routes inside the signed-in area. */}
       <Tabs.Screen name="request-new" options={{ href: null }} />
       <Tabs.Screen name="request-live" options={{ href: null }} />
+      <Tabs.Screen name="request-share" options={{ href: null }} />
+      <Tabs.Screen name="campaigns" options={{ href: null }} />
+      <Tabs.Screen name="assistant" options={{ href: null }} />
+      <Tabs.Screen name="volunteer-post" options={{ href: null }} />
+      <Tabs.Screen name="volunteer-slips" options={{ href: null }} />
       <Tabs.Screen name="donor-setup" options={{ href: null }} />
       <Tabs.Screen name="donor/alert-guide" options={{ href: null }} />
+      <Tabs.Screen name="donor/settings" options={{ href: null }} />
+      <Tabs.Screen name="donor/history" options={{ href: null }} />
       <Tabs.Screen name="alerts" options={{ href: null }} />
       <Tabs.Screen name="alert-detail" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
@@ -92,6 +99,10 @@ export default function AppLayout() {
       <Tabs.Screen name="admin-usage" options={{ href: null }} />
       <Tabs.Screen name="admin-demo" options={{ href: null }} />
       <Tabs.Screen name="admin-settings" options={{ href: null }} />
+      <Tabs.Screen name="admin-directory" options={{ href: null }} />
+      <Tabs.Screen name="admin-faq" options={{ href: null }} />
+      <Tabs.Screen name="admin-data" options={{ href: null }} />
+      <Tabs.Screen name="admin-summary" options={{ href: null }} />
       <Tabs.Screen name="my-data" options={{ href: null }} />
     </Tabs>
   );

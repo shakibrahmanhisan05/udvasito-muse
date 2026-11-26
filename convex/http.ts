@@ -13,6 +13,8 @@ import { authComponent, createAuth } from "./auth";
  *   on tap only; rate-limited 30/hour/network; never cached.
  * - GET /public/stats (specs §6.5): anonymised live-impact aggregates
  *   for the landing page (P7); practice excluded; cached 5 minutes.
+ * - GET /slip/:requestId (specs §6.5, P7): private slip photos,
+ *   Bearer-authenticated, audited per view, never cached.
  * - GET /health (specs §6.5): uptime checks.
  */
 const http = httpRouter();
@@ -25,6 +27,7 @@ const handleTelegramUpdate = makeFunctionReference<"mutation">(
 const helplineFetch = makeFunctionReference<"mutation">("support:helplineFetch");
 const getPublicSnapshot = makeFunctionReference<"query">("stats:getPublicSnapshot");
 const computeSnapshots = makeFunctionReference<"mutation">("stats:computeSnapshots");
+const authorizeSlipView = makeFunctionReference<"mutation">("slips:authorizeView");
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -163,6 +166,42 @@ http.route({
   path: "/health",
   method: "GET",
   handler: httpActionGeneric(async () => Response.json({ ok: true, time: Date.now() })),
+});
+
+/**
+ * GET /slip/:requestId (specs §6.5, F-209/F-706) — the ONLY way a
+ * slip photo is served: Bearer session token, owner / volunteer /
+ * admin only (internal.slips.authorizeView, which audits every
+ * view), image bytes with Cache-Control: no-store. Unauthenticated →
+ * 401; unauthorised or missing → 404 (a slip's existence is private).
+ */
+http.route({
+  pathPrefix: "/slip/",
+  method: "GET",
+  handler: httpActionGeneric(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return new Response("Unauthorized", { status: 401 });
+    const requestId = new URL(request.url).pathname.split("/").pop() ?? "";
+    let authorized: { fileId: string } | null = null;
+    try {
+      authorized = (await ctx.runMutation(authorizeSlipView, {
+        subject: identity.subject,
+        requestId: requestId as never,
+      })) as { fileId: string } | null;
+    } catch {
+      authorized = null;
+    }
+    if (!authorized) return new Response("Not found", { status: 404 });
+    const blob = await ctx.storage.get(authorized.fileId as never);
+    if (!blob) return new Response("Not found", { status: 404 });
+    return new Response(blob, {
+      status: 200,
+      headers: {
+        "Content-Type": blob.type || "image/jpeg",
+        "Cache-Control": "no-store",
+      },
+    });
+  }),
 });
 
 export default http;

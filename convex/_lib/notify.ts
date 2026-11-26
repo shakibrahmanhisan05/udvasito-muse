@@ -4,6 +4,7 @@ import { makeFunctionReference } from "convex/server";
 import { components } from "../_generated/api";
 import type { DataModel, Doc, Id } from "../schemaTypes";
 import { recordEvent } from "./events";
+import { featureOn } from "./settings";
 
 /**
  * Notification delivery (specs §6.8). Templates below are copied verbatim
@@ -137,6 +138,14 @@ const TEMPLATES: Record<string, Record<Lang, Template>> = {
       body: "এক ট্যাপে আমরা আসল রক্তদান গুনতে পারি।",
     },
   },
+  "NTF-11": {
+    en: { title: "You can donate again from today", body: "Thank you for staying ready." },
+    bn: { title: "আজ থেকে আবার রক্ত দিতে পারবেন", body: "প্রস্তুত থাকার জন্য ধন্যবাদ।" },
+  },
+  "NTF-12": {
+    en: { title: "Still available to donate?", body: "Tap to confirm in one second." },
+    bn: { title: "এখনো রক্ত দিতে প্রস্তুত?", body: "এক সেকেন্ডে নিশ্চিত করতে ট্যাপ করুন।" },
+  },
   "NTF-13": {
     en: { title: "Your pause has ended", body: "You'll receive requests again." },
     bn: { title: "আপনার বিরতি শেষ", body: "আবার অনুরোধ পাবেন।" },
@@ -269,6 +278,30 @@ export async function notifyUser(
         body: rendered.body,
         url: args.url,
         tag: String(notificationId),
+      });
+    }
+  }
+  // F-307 email copy (P7, switch `emailAlerts`): a donor who opted in
+  // gets a second row on the email channel for alert templates. The
+  // row stays `queued` until an email provider is configured (the
+  // Step-5 free-channel choice is still open — see P7-REPORT); the
+  // queue is the deliverable interface, visible in admin usage.
+  if (
+    (args.template === "NTF-01" || args.template === "NTF-02") &&
+    (await featureOn(ctx, "emailAlerts"))
+  ) {
+    const donor = await ctx.db
+      .query("donorProfiles")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.recipient._id))
+      .unique();
+    if (donor?.emailCopyOptIn === true) {
+      await ctx.db.insert("notifications", {
+        recipientId: args.recipient._id,
+        template: args.template,
+        requestId: args.requestId,
+        channel: "email",
+        status: "queued",
+        isDemo: args.recipient.isDemo,
       });
     }
   }

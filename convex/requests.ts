@@ -1,15 +1,17 @@
-import { makeFunctionReference } from "convex/server";
-import type { GenericMutationCtx } from "convex/server";
+import { makeFunctionReference, queryGeneric } from "convex/server";
+import type { GenericDatabaseReader, GenericMutationCtx } from "convex/server";
 import type { DataModel, Doc, Id } from "./schemaTypes";
 import { v } from "convex/values";
-import { memberMutationV, memberQueryV, ownerViewQueryV } from "./_lib/auth";
+import { memberMutationV, memberQueryV, ownerViewQueryV, volunteerMutationV, volunteerQueryV } from "./_lib/auth";
 import { fail } from "./_lib/errors";
-import { getRulesSettings, getSetting } from "./_lib/settings";
+import { featureOn, getRulesSettings, getSetting } from "./_lib/settings";
+import { writeAudit } from "./_lib/audit";
 import { recordEvent } from "./_lib/events";
 import { notifyUser, COMPONENT_LABEL } from "./_lib/notify";
 import { phoneOf } from "./_lib/visibility";
 import { eqRange } from "./_lib/db";
 import { canCreateRequest, FARMING_WINDOW_DAYS, farmingSignals } from "./rules/limits";
+import { dupGroupKey, findDuplicate, responsePriority } from "./rules/duplicates";
 import { containsMoneyWord, normalisePhone, validateRequestForm } from "./rules/validation";
 import { haversineKm } from "./rules/ranking";
 import { pruneNoShows } from "./rules/alertPolicy";
@@ -79,9 +81,12 @@ export const create = memberMutationV({
     isDengue: v.boolean(),
     unitsNeeded: v.number(),
     hospitalId: v.optional(v.id("hospitals")),
-    divisionId: v.id("places"),
-    districtId: v.id("places"),
-    upazilaId: v.id("places"),
+    // Optional since P7: when a hospital is picked the place comes
+    // from the hospital row (the SCR-M02 form does not know a picked
+    // hospital's place ids); the no-hospital path validates presence.
+    divisionId: v.optional(v.id("places")),
+    districtId: v.optional(v.id("places")),
+    upazilaId: v.optional(v.id("places")),
     placeText: v.optional(v.string()),
     approxLat: v.optional(v.number()),
     approxLng: v.optional(v.number()),
@@ -105,6 +110,17 @@ export const create = memberMutationV({
       .collect();
     const existing = sameClient.find((r) => r.requesterId === ctx.profile._id);
     if (existing) return { requestId: existing._id, existing: true };
+
+    // F-211: posting on behalf of a family is a volunteer action,
+    // behind features.volunteerPost.
+    if (args.source === "volunteer_paste") {
+      if (!(await featureOn(ctx, "volunteerPost"))) {
+        fail("ERR_VALIDATION", {}, "feature");
+      }
+      if (!["volunteer", "admin", "superadmin"].includes(ctx.profile.role)) {
+        fail("ERR_FORBIDDEN");
+      }
+    }
 
     const check = validateRequestForm(
       {
@@ -174,9 +190,12 @@ export const create = memberMutationV({
       approxLat = round3(hospital!.lat);
       approxLng = round3(hospital!.lng);
     } else {
+      if (!args.divisionId || !args.districtId || !args.upazilaId) {
+        fail("ERR_VALIDATION", {}, "place");
+      }
       const [district, upazila] = await Promise.all([
-        ctx.db.get(args.districtId),
-        ctx.db.get(args.upazilaId),
+        ctx.db.get(args.districtId!),
+        ctx.db.get(args.upazilaId!),
       ]);
       if (!district || !upazila || upazila!.parentId !== district!._id) {
         fail("ERR_VALIDATION", {}, "place");
@@ -208,9 +227,12 @@ export const create = memberMutationV({
       unitsConfirmed: 0,
       hospitalId: args.hospitalId,
       placeText: args.placeText,
-      divisionId,
-      districtId,
-      upazilaId,
+      // Both branches above guarantee these: the hospital branch
+      // takes them from the hospital row; the other branch validated
+      // their presence before resolving.
+      divisionId: divisionId!,
+      districtId: districtId!,
+      upazilaId: upazilaId!,
       approxLat,
       approxLng,
       neededBy: args.neededBy,
@@ -445,6 +467,13 @@ export const listMine = memberQueryV({
     const page = [];
     for (const row of rows.slice(0, args.paginationOpts.numItems)) {
       const hospital = row.hospitalId ? await ctx.db.get(row.hospitalId) : null;
+      // For a merged request, expose the surviving request's slug so
+      // the owner can follow it (F-707: both requesters are informed).
+      let mergedSlug: string | null = null;
+      if (row.mergedIntoId) {
+        const survivor = await ctx.db.get(row.mergedIntoId);
+        mergedSlug = survivor?.publicSlug ?? null;
+      }
       page.push({
         _id: row._id,
         bloodGroup: row.bloodGroup,
@@ -453,6 +482,9 @@ export const listMine = memberQueryV({
         unitsNeeded: row.unitsNeeded,
         unitsConfirmed: row.unitsConfirmed,
         status: row.status,
+        closeReason: row.closeReason ?? null,
+        mergedSlug,
+        postedByVolunteer: Boolean(row.createdByVolunteerId),
         hospitalName: hospital?.nameEn ?? row.placeText ?? "",
         createdAt: row._creationTime,
         neededBy: row.neededBy,
@@ -659,6 +691,587 @@ export const markDonorNotResponding = memberMutationV({
       const fresh = await ctx.db.get(req._id);
       if (fresh) await promoteStandbyOrWave(ctx, fresh);
     }
+    return null;
+  },
+});
+
+/** Hospital display name for duplicate summaries (never patient data). */
+async function dupHospitalName(
+  ctx: { db: GenericDatabaseReader<DataModel> },
+  request: Doc<"requests">,
+): Promise<string> {
+  if (request.hospitalId) {
+    const hospital = await ctx.db.get(request.hospitalId);
+    if (hospital) return hospital.nameEn;
+  }
+  if (request.placeText) return request.placeText;
+  const upazila = await ctx.db.get(request.upazilaId);
+  return upazila?.nameEn ?? "";
+}
+
+/** Open (live/covered) requests in the caller's demo scope, newest first. */
+async function openRequestsForDup(
+  ctx: { db: GenericDatabaseReader<DataModel> },
+  isDemo: boolean,
+  bloodGroup: Doc<"requests">["bloodGroup"],
+  hospitalId: Id<"hospitals"> | undefined,
+  districtId: Id<"places"> | undefined,
+): Promise<Doc<"requests">[]> {
+  const out: Doc<"requests">[] = [];
+  for (const status of ["live", "covered"] as const) {
+    if (hospitalId) {
+      const rows = await ctx.db
+        .query("requests")
+        .withIndex("by_dup", (q) =>
+          q.eq("isDemo", isDemo).eq("status", status).eq("bloodGroup", bloodGroup).eq("hospitalId", hospitalId),
+        )
+        .collect();
+      out.push(...rows);
+    } else if (districtId) {
+      const rows = await ctx.db
+        .query("requests")
+        .withIndex("by_status_district", (q) =>
+          q.eq("isDemo", isDemo).eq("status", status).eq("districtId", districtId),
+        )
+        .collect();
+      out.push(...rows.filter((r) => r.bloodGroup === bloodGroup));
+    } else {
+      // No district either (specs §6.2 always sends the upazila; the
+      // form always has the district when it has an upazila) — a
+      // bounded status scan keeps the check correct regardless.
+      const rows = await ctx.db
+        .query("requests")
+        .withIndex("by_status_neededBy", (q) => q.eq("status", status))
+        .take(200);
+      out.push(...rows.filter((r) => r.isDemo === isDemo && r.bloodGroup === bloodGroup));
+    }
+  }
+  return out;
+}
+
+/**
+ * requests.repeat (F-210/R15, switch `repeatRequest`) — "Request again"
+ * on a CLOSED request: copies its clinical/place/contact details; the
+ * requester only adjusts the date and units (the AC). The copy goes
+ * through the same form validation, creation limits and matching start
+ * as a fresh post. Merged sources are refused — repeat the survivor.
+ */
+export const repeat = memberMutationV({
+  args: {
+    fromId: v.id("requests"),
+    neededBy: v.number(),
+    unitsNeeded: v.number(),
+  },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "repeatRequest"))) fail("ERR_VALIDATION", {}, "feature");
+    const source = await ctx.db.get(args.fromId);
+    if (!source || source.isDemo !== ctx.profile.isDemo) fail("ERR_NOT_FOUND");
+    if (source.requesterId !== ctx.profile._id) fail("ERR_FORBIDDEN");
+    if (source.status !== "closed") fail("ERR_VALIDATION", {}, "status");
+    if (source.mergedIntoId) fail("ERR_VALIDATION", {}, "mergedIntoId");
+
+    const formCheck = validateRequestForm(
+      {
+        bloodGroup: source.bloodGroup,
+        component: source.component,
+        isDengue: source.isDengue,
+        unitsNeeded: args.unitsNeeded,
+        neededBy: args.neededBy,
+        hospitalId: source.hospitalId,
+        districtId: source.districtId,
+        upazilaId: source.upazilaId,
+        placeText: source.placeText,
+        contactPhone: source.contactPhone,
+        patientName: source.patientName,
+        ward: source.ward,
+        note: source.note,
+      },
+      Date.now(),
+    );
+    if (!formCheck.ok) fail("ERR_VALIDATION", {}, formCheck.field);
+
+    // The same creation limits as a fresh post (rules/limits).
+    const settings = await getRulesSettings(ctx);
+    const byStatus = async (status: "live" | "covered" | "closed") =>
+      await ctx.db
+        .query("requests")
+        .withIndex("by_requester_status", (q) =>
+          q.eq("requesterId", ctx.profile._id).eq("status", status),
+        )
+        .collect();
+    const [live, covered, closed] = await Promise.all([
+      byStatus("live"),
+      byStatus("covered"),
+      byStatus("closed"),
+    ]);
+    const { y, m } = dhakaParts(Date.now());
+    const monthStart = Date.parse(
+      `${y}-${String(m).padStart(2, "0")}-01T00:00:00+06:00`,
+    );
+    const thisMonth = [...live, ...covered, ...closed].filter(
+      (r) => r._creationTime >= monthStart,
+    ).length;
+    const limit = canCreateRequest(
+      ctx.profile,
+      { open: live.length + covered.length, thisMonth, isVolunteerPosting: false },
+      settings,
+    );
+    if (!limit.ok) fail(limit.code, limit.params);
+
+    let publicSlug = randomSlug();
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const clash = await ctx.db
+        .query("requests")
+        .withIndex("by_publicSlug", (q) => q.eq("publicSlug", publicSlug))
+        .first();
+      if (!clash) break;
+      publicSlug = randomSlug();
+    }
+
+    const contactPhone = normalisePhone(source.contactPhone)!;
+    const requestId = await ctx.db.insert("requests", {
+      requesterId: ctx.profile._id,
+      createdByVolunteerId: undefined,
+      source: "form",
+      clientId: `repeat-${source._id}-${Date.now()}`,
+      bloodGroup: source.bloodGroup,
+      component: source.component,
+      isDengue: source.isDengue,
+      unitsNeeded: args.unitsNeeded,
+      unitsConfirmed: 0,
+      hospitalId: source.hospitalId,
+      placeText: source.placeText,
+      divisionId: source.divisionId,
+      districtId: source.districtId,
+      upazilaId: source.upazilaId,
+      approxLat: source.approxLat,
+      approxLng: source.approxLng,
+      neededBy: args.neededBy,
+      urgency: deriveUrgency(args.neededBy, Date.now()),
+      patientName: source.patientName,
+      ward: source.ward,
+      note: source.note,
+      contactPhone,
+      contactPhoneVerified: ctx.profile.phoneVerified && contactPhone === ctx.profile.phone,
+      lang: source.lang,
+      publicSlug,
+      status: "live",
+      wave: 0,
+      volunteerShownIds: [],
+      fallbackShown: false,
+      zeroEligibleAtPublish: false,
+      verifiedBadge: false,
+      slipStatus: "none",
+      revealsFrozen: false,
+      hiddenByModerator: false,
+      aiAssisted: false,
+      isDemo: ctx.profile.isDemo,
+    });
+    await recordEvent(ctx, "request_published", {
+      requestId,
+      actorRole: ctx.profile.role,
+      props: { source: "repeat", fromRequestId: source._id },
+      isDemo: ctx.profile.isDemo,
+    });
+    await ctx.scheduler.runAfter(0, startRequestRef, { requestId });
+    await scheduleAutoClose(ctx, requestId, args.neededBy);
+    return { requestId };
+  },
+});
+
+/**
+ * requests.checkDuplicate (specs §6.2, F-208 / R12) — the pre-post
+ * warning. Rules only: same blood group + same hospital (or upazila)
+ * within the S-31 window. Behind `features.duplicateWarning`; when
+ * the switch is off the query is inert and returns no match. The
+ * result carries no personal data — slug, hospital, time only (P-12).
+ */
+export const checkDuplicate = memberQueryV({
+  args: {
+    bloodGroup: requestGroup,
+    hospitalId: v.optional(v.id("hospitals")),
+    // Required by specs §6.2; optional here because the form does not
+    // know a picked hospital's upazila — with a hospitalId the
+    // hospital is the key and the upazila is not needed.
+    upazilaId: v.optional(v.id("places")),
+    districtId: v.optional(v.id("places")),
+  },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "duplicateWarning"))) return {};
+    if (!args.hospitalId && !args.upazilaId) return {};
+    const windowHours = await getSetting<number>(ctx, "duplicateWindowHours");
+    const since = Date.now() - windowHours * 3_600_000;
+    const rows = await openRequestsForDup(
+      ctx, ctx.profile.isDemo, args.bloodGroup, args.hospitalId, args.districtId,
+    );
+    const match = findDuplicate(
+      rows.map((r) => ({
+        id: r._id, requesterId: r.requesterId, bloodGroup: r.bloodGroup,
+        hospitalId: r.hospitalId, upazilaId: r.upazilaId,
+        createdAt: r._creationTime, publicSlug: r.publicSlug,
+      })),
+      {
+        bloodGroup: args.bloodGroup,
+        hospitalId: args.hospitalId,
+        upazilaId: args.upazilaId ?? "",
+        since,
+        excludeRequesterId: ctx.profile._id,
+      },
+    );
+    if (!match) return {};
+    const matched = rows.find((r) => r._id === match.id)!;
+    return {
+      match: {
+        slug: matched.publicSlug,
+        hospitalName: await dupHospitalName(ctx, matched),
+        createdAt: matched._creationTime,
+      },
+    };
+  },
+});
+
+/**
+ * requests.generateSlipUploadUrl (specs §6.2, F-209) — owner only,
+ * behind features.slips. The photo goes to PRIVATE Convex storage
+ * (never Cloudinary — specs reserve that for public share cards).
+ */
+export const generateSlipUploadUrl = memberMutationV({
+  args: { requestId: v.id("requests") },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "slips"))) fail("ERR_VALIDATION", {}, "feature");
+    const request = await ctx.db.get(args.requestId);
+    if (!request || request.isDemo !== ctx.profile.isDemo) fail("ERR_NOT_FOUND");
+    if (request!.requesterId !== ctx.profile._id) fail("ERR_FORBIDDEN");
+    if (request!.status === "closed") fail("ERR_REQUEST_CLOSED");
+    return { uploadUrl: await ctx.storage.generateUploadUrl() };
+  },
+});
+
+/**
+ * requests.attachSlip (specs §6.2, F-209) — owner only; the slip
+ * goes to pending for volunteer checks (F-706). Posting was never
+ * blocked on a slip (R13); replacing a slip deletes the old file.
+ */
+export const attachSlip = memberMutationV({
+  args: { requestId: v.id("requests"), storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "slips"))) fail("ERR_VALIDATION", {}, "feature");
+    const request = await ctx.db.get(args.requestId);
+    if (!request || request.isDemo !== ctx.profile.isDemo) fail("ERR_NOT_FOUND");
+    if (request!.requesterId !== ctx.profile._id) fail("ERR_FORBIDDEN");
+    if (request!.status === "closed") fail("ERR_REQUEST_CLOSED");
+    const blob = await ctx.storage.get(args.storageId);
+    if (!blob) fail("ERR_VALIDATION", {}, "storageId");
+    if (request!.slipFileId && request!.slipFileId !== args.storageId) {
+      await ctx.storage.delete(request!.slipFileId);
+    }
+    await ctx.db.patch(request!._id, {
+      slipFileId: args.storageId,
+      slipStatus: "pending",
+      slipReviewedBy: undefined,
+      slipReviewReason: undefined,
+    });
+    await recordEvent(ctx, "slip_attached", {
+      requestId: request!._id,
+      actorRole: "member",
+      isDemo: request!.isDemo,
+    });
+    return null;
+  },
+});
+
+/**
+ * requests.claimAsFamily (F-211 / US-V04) — the family a volunteer
+ * posted for can take over the request: the request's contact number
+ * (from the public post) must be the caller's own VERIFIED number.
+ * Ownership moves, the contact becomes verified, and the volunteer
+ * provenance (createdByVolunteerId) stays on the record.
+ */
+export const claimAsFamily = memberMutationV({
+  args: { requestId: v.id("requests") },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "volunteerPost"))) {
+      fail("ERR_VALIDATION", {}, "feature");
+    }
+    const request = await ctx.db.get(args.requestId);
+    if (
+      !request ||
+      request.isDemo !== ctx.profile.isDemo ||
+      !request.createdByVolunteerId
+    ) {
+      fail("ERR_NOT_FOUND");
+    }
+    if (request!.requesterId === ctx.profile._id) return { ok: true as const };
+    if (request!.status === "closed") fail("ERR_REQUEST_CLOSED");
+    if (!ctx.profile.phoneVerified) fail("ERR_FORBIDDEN");
+    if (normalisePhone(ctx.profile.phone) !== normalisePhone(request!.contactPhone)) {
+      fail("ERR_FORBIDDEN");
+    }
+    await ctx.db.patch(request!._id, {
+      requesterId: ctx.profile._id,
+      contactPhoneVerified: true,
+    });
+    await writeAudit(ctx, {
+      actor: ctx.profile,
+      action: "request_claimed_by_family",
+      targetType: "request",
+      targetId: request!._id,
+    });
+    await recordEvent(ctx, "request_claimed_by_family", {
+      requestId: request!._id,
+      actorRole: "member",
+      isDemo: request!.isDemo,
+    });
+    return { ok: true as const };
+  },
+});
+
+/**
+ * requests.claimableByMe (F-211) — open volunteer-posted requests
+ * whose contact number is the caller's verified number: the family's
+ * path to claiming. Summaries only; the number itself is the
+ * caller's own, so nothing about anyone else is revealed.
+ */
+export const claimableByMe = memberQueryV({
+  args: {},
+  handler: async (ctx) => {
+    if (!(await featureOn(ctx, "volunteerPost"))) return [];
+    if (!ctx.profile.phoneVerified) return [];
+    const mine = normalisePhone(ctx.profile.phone);
+    if (!mine) return [];
+    const out = [];
+    for (const status of ["live", "covered"] as const) {
+      const rows = await ctx.db
+        .query("requests")
+        .withIndex("by_status_neededBy", (q) => q.eq("status", status))
+        .collect();
+      for (const row of rows) {
+        if (
+          row.isDemo === ctx.profile.isDemo &&
+          row.createdByVolunteerId &&
+          row.requesterId !== ctx.profile._id &&
+          normalisePhone(row.contactPhone) === mine
+        ) {
+          const hospital = row.hospitalId ? await ctx.db.get(row.hospitalId) : null;
+          out.push({
+            requestId: row._id,
+            bloodGroup: row.bloodGroup,
+            component: row.component,
+            hospitalName: hospital?.nameEn ?? row.placeText ?? "",
+            createdAt: row._creationTime,
+          });
+        }
+      }
+    }
+    return out;
+  },
+});
+
+/**
+ * requests.publicView (specs §6.2, F-1002) — the anonymised public
+ * view behind /r/<slug> (SCR-P02). Public (no sign-in), but ONLY when
+ * features.sharedLinks is on, and never for practice requests or
+ * moderation-hidden ones (both read as not-found). Returns no names,
+ * no numbers, nothing about any person (P-12).
+ */
+export const publicView = queryGeneric({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "sharedLinks"))) fail("ERR_NOT_FOUND");
+    const request = await ctx.db
+      .query("requests")
+      .withIndex("by_publicSlug", (q) => q.eq("publicSlug", args.slug))
+      .unique();
+    if (!request || request.isDemo || request.hiddenByModerator) {
+      fail("ERR_NOT_FOUND");
+    }
+    const hospital = request!.hospitalId
+      ? await ctx.db.get(request!.hospitalId)
+      : undefined;
+    const upazila = await ctx.db.get(request!.upazilaId);
+    return {
+      bloodGroup: request!.bloodGroup,
+      component: request!.component,
+      isDengue: request!.isDengue,
+      unitsNeeded: request!.unitsNeeded,
+      unitsConfirmed: request!.unitsConfirmed,
+      hospitalName: hospital?.nameEn ?? request!.hospitalFreeText ?? "",
+      areaName: upazila?.nameEn ?? "",
+      neededBy: request!.neededBy,
+      status: request!.status,
+      lang: request!.lang,
+    };
+  },
+});
+
+/**
+ * requests.suggestedPairs (F-707 / V06) — volunteer-facing duplicate
+ * suggestions from the same rule. Pairs of open requests (different
+ * requesters) sharing group + hospital/upazila inside the S-31
+ * window. Summaries only — no patient names, no phones (P-12).
+ */
+export const suggestedPairs = volunteerQueryV({
+  args: {},
+  handler: async (ctx) => {
+    if (!(await featureOn(ctx, "duplicateWarning"))) return [];
+    const windowHours = await getSetting<number>(ctx, "duplicateWindowHours");
+    const since = Date.now() - windowHours * 3_600_000;
+    const open: Doc<"requests">[] = [];
+    for (const status of ["live", "covered"] as const) {
+      const rows = await ctx.db
+        .query("requests")
+        .withIndex("by_status_neededBy", (q) => q.eq("status", status))
+        .collect();
+      open.push(...rows.filter((r) => r.isDemo === ctx.profile.isDemo && r._creationTime >= since));
+    }
+    const groups = new Map<string, Doc<"requests">[]>();
+    for (const r of open) {
+      const key = dupGroupKey(r);
+      const list = groups.get(key) ?? [];
+      list.push(r);
+      groups.set(key, list);
+    }
+    const pairs: {
+      aId: Id<"requests">; bId: Id<"requests">; bloodGroup: string;
+      hospitalName: string; aCreatedAt: number; bCreatedAt: number;
+    }[] = [];
+    for (const list of groups.values()) {
+      const sorted = [...list].sort((a, b) => a._creationTime - b._creationTime);
+      for (let i = 0; i < sorted.length; i++) {
+        for (let j = i + 1; j < sorted.length; j++) {
+          if (sorted[i].requesterId === sorted[j].requesterId) continue;
+          pairs.push({
+            aId: sorted[i]._id, bId: sorted[j]._id,
+            bloodGroup: sorted[i].bloodGroup,
+            hospitalName: await dupHospitalName(ctx, sorted[i]),
+            aCreatedAt: sorted[i]._creationTime, bCreatedAt: sorted[j]._creationTime,
+          });
+        }
+      }
+    }
+    return pairs.slice(0, 20);
+  },
+});
+
+/**
+ * requests.merge (specs §6.2, F-707 / V06) — a volunteer merges the
+ * duplicate `fromId` into the surviving `intoId`:
+ * - every response moves to the survivor; a donor present on both
+ *   keeps their stronger state (a confirmed slot is never lost);
+ * - contact reveals follow their request, so whoHasMyNumber stays
+ *   truthful (visibility rules unchanged — no new phone exposure);
+ * - the survivor's confirmed count is recomputed and capped at
+ *   units + S-12 (newest surplus confirmations step back to standby);
+ * - `from` closes with reason `merged` + mergedIntoId, which stops
+ *   its waves (runWave/autoClose guard on status) — no more duplicate
+ *   notifications. Both requesters see the outcome in-app: the merged
+ *   request points at the survivor, and the survivor shows the moved
+ *   donors. (No push template for merges exists in specs §6.8 — see
+ *   the P7 report's copy-gap note.)
+ */
+export const merge = volunteerMutationV({
+  args: { fromId: v.id("requests"), intoId: v.id("requests") },
+  handler: async (ctx, args) => {
+    if (!(await featureOn(ctx, "duplicateWarning"))) fail("ERR_VALIDATION", {}, "feature");
+    if (args.fromId === args.intoId) fail("ERR_VALIDATION", {}, "intoId");
+    const from = await ctx.db.get(args.fromId);
+    const into = await ctx.db.get(args.intoId);
+    if (
+      !from || !into ||
+      from!.isDemo !== ctx.profile.isDemo || into!.isDemo !== ctx.profile.isDemo
+    ) {
+      fail("ERR_NOT_FOUND");
+    }
+    const src = from!;
+    const dst = into!;
+    if (src.status === "closed" || dst.status === "closed") {
+      fail("ERR_REQUEST_CLOSED");
+    }
+
+    // Move responses, deduping per donor by stronger state.
+    const allFromResponses = await allResponses(ctx, src._id);
+    const intoResponses = await allResponses(ctx, dst._id);
+    const intoByDonor = new Map(intoResponses.map((r) => [r.donorProfileId, r]));
+    let moved = 0;
+    let deduped = 0;
+    for (const response of allFromResponses) {
+      const existing = intoByDonor.get(response.donorProfileId);
+      if (!existing) {
+        await ctx.db.patch(response._id, { requestId: dst._id });
+        intoByDonor.set(response.donorProfileId, { ...response, requestId: dst._id });
+        moved += 1;
+        continue;
+      }
+      // Donor on both: the stronger state survives on the target row;
+      // the weaker row is removed (its history is in the merge event).
+      deduped += 1;
+      if (responsePriority(response.state) > responsePriority(existing.state)) {
+        await ctx.db.patch(existing._id, {
+          state: response.state,
+          wave: response.wave,
+          acceptedAt: response.acceptedAt,
+          confirmedAt: response.confirmedAt,
+          openedAt: response.openedAt ?? existing.openedAt,
+          stillComingAnswer: response.stillComingAnswer,
+          stillComingAnsweredAt: response.stillComingAnsweredAt,
+        });
+        intoByDonor.set(response.donorProfileId, { ...existing, state: response.state });
+      }
+      await ctx.db.delete(response._id);
+    }
+
+    // Reveals follow the surviving request.
+    const reveals = await ctx.db
+      .query("contactReveals")
+      .withIndex("by_request", (q) => q.eq("requestId", src._id))
+      .collect();
+    for (const reveal of reveals) {
+      await ctx.db.patch(reveal._id, { requestId: dst._id });
+    }
+
+    // Recompute the survivor's confirmed count with the S-12 cap.
+    const extraConfirmedSlots = await getSetting<number>(ctx, "extraConfirmedSlots");
+    const survivors = await allResponses(ctx, dst._id);
+    const confirmed = survivors
+      .filter((r) => r.state === "confirmed")
+      .sort((a, b) => (a.confirmedAt ?? a._creationTime) - (b.confirmedAt ?? b._creationTime));
+    const cap = dst.unitsNeeded + extraConfirmedSlots;
+    let demoted = 0;
+    for (const surplus of confirmed.slice(cap)) {
+      await ctx.db.patch(surplus._id, { state: "standby" });
+      demoted += 1;
+    }
+    const confirmedCount = Math.min(confirmed.length, cap);
+    const unitsConfirmed = Math.min(confirmedCount, dst.unitsNeeded);
+    const covered = unitsConfirmed >= dst.unitsNeeded;
+    await ctx.db.patch(dst._id, {
+      unitsConfirmed,
+      status: covered ? "covered" : "live",
+      nextWaveAt: covered ? undefined : dst.nextWaveAt,
+    });
+
+    // Close the duplicate.
+    await ctx.db.patch(src._id, {
+      status: "closed",
+      closeReason: "merged",
+      mergedIntoId: dst._id,
+      closedAt: Date.now(),
+      nextWaveAt: undefined,
+    });
+
+    await writeAudit(ctx, {
+      actor: ctx.profile,
+      action: "request_merged",
+      targetType: "request",
+      targetId: dst._id,
+      meta: { fromId: src._id, moved, deduped, demoted, revealsMoved: reveals.length },
+    });
+    await recordEvent(ctx, "request_merged", {
+      requestId: dst._id,
+      actorRole: ctx.profile.role,
+      props: { fromId: src._id, moved, deduped, demoted },
+      isDemo: dst.isDemo,
+    });
     return null;
   },
 });

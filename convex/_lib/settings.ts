@@ -69,3 +69,14 @@ export const RULES_SETTING_KEYS: (keyof RulesSettings)[] = [
 export async function getRulesSettings(ctx: Ctx): Promise<RulesSettings> {
   return (await getSettings(ctx, [...RULES_SETTING_KEYS])) as unknown as RulesSettings;
 }
+
+/**
+ * Feature switches (roadmap P7): every Should feature ships behind
+ * `settings.features.<name>`, default OFF. Server functions check this
+ * themselves — a switched-off feature is inert even if a stale client
+ * calls it — and clients hide every entry point.
+ */
+export async function featureOn(ctx: Ctx, name: string): Promise<boolean> {
+  const features = await getSetting<Record<string, boolean>>(ctx, "features");
+  return features[name] === true;
+}

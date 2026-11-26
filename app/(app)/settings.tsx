@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useMutation, useQuery } from "convex/react";
 import { Button, LanguageToggle } from "@/components";
 import { colors, radius, spacing, typography } from "@/theme/tokens";
@@ -16,8 +16,13 @@ import { refs } from "@/lib/refs";
 export default function Settings() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
   const me = useQuery(refs.me, isAuthConfigured ? {} : "skip");
   const updateLanguage = useMutation(refs.updateLanguage);
+  const updateProfile = useMutation(refs.updateProfile);
+  const [editName, setEditName] = useState<string | null>(null);
+  const [editPhone, setEditPhone] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const session = authClient.useSession();
   const currentLang = i18n.language === "bn" ? "bn" : "en";
 
@@ -43,6 +48,43 @@ export default function Settings() {
           </>
         ) : null}
       </View>
+      {appConfig?.features?.editProfile === true && me ? (
+        <View style={styles.card}>
+          <TextInput
+            style={styles.input}
+            value={editName ?? me.name}
+            onChangeText={setEditName}
+            accessibilityLabel={t("onboarding.name")}
+          />
+          <TextInput
+            style={styles.input}
+            value={editPhone ?? me.phone}
+            onChangeText={setEditPhone}
+            keyboardType="phone-pad"
+            accessibilityLabel={t("onboarding.phone")}
+          />
+          {editError ? <Text style={styles.help}>{editError}</Text> : null}
+          <Button
+            label={t("common.save")}
+            variant="secondary"
+            onPress={() => {
+              setEditError(null);
+              void (async () => {
+                try {
+                  await updateProfile({
+                    ...(editName !== null && editName !== me.name ? { name: editName } : {}),
+                    ...(editPhone !== null && editPhone !== me.phone ? { phone: editPhone } : {}),
+                  });
+                  setEditName(null);
+                  setEditPhone(null);
+                } catch {
+                  setEditError(t("errors.generic"));
+                }
+              })();
+            }}
+          />
+        </View>
+      ) : null}
       <View style={styles.card}>
         <Button
           label={t("welcome.privacy")}
@@ -77,6 +119,15 @@ const styles = StyleSheet.create({
   title: { ...typography.title, color: colors.text.primary },
   body: { ...typography.body, color: colors.text.primary },
   help: { ...typography.small, color: colors.text.muted },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border.input,
+    borderRadius: radius.input,
+    paddingHorizontal: spacing.md,
+    minHeight: 48,
+    color: colors.text.primary,
+    backgroundColor: colors.bg.app,
+  },
   card: {
     backgroundColor: colors.bg.surface,
     borderRadius: radius.card,

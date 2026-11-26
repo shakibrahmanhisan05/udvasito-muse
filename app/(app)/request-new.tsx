@@ -2,13 +2,14 @@ import React, { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useConvex, useMutation, useQuery } from "convex/react";
 import {
   Banner,
   Button,
   ChipRow,
   FieldLabel,
   PlacePickers,
+  Sheet,
   useToast,
   type PlaceSelection,
 } from "@/components";
@@ -22,7 +23,7 @@ import { parseIntake, type IntakeFields } from "@/convex/rules/intakeParser";
 import { extractContactPhone } from "@/convex/rules/redaction";
 import { isVoiceAvailable, startListening, stopListening, voiceLangFor } from "@/lib/voice";
 import { outbox } from "@/lib/outbox";
-import { formatCount } from "@/lib/format";
+import { formatCount, formatDateTime } from "@/lib/format";
 import type { Id } from "@/convex/_generated/dataModel";
 
 const GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -51,6 +52,17 @@ export default function RequestNew() {
   const params = useLocalSearchParams<{ dengue?: string }>();
   const me = useQuery(refs.me, isAuthConfigured ? {} : "skip");
   const create = useMutation(refs.requestsCreate);
+  const convex = useConvex();
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
+  // F-208 duplicate warning (behind features.duplicateWarning): the
+  // match the pre-post check found, and the requester's explicit
+  // "post anyway" bypass for this submission.
+  const [dupMatch, setDupMatch] = useState<{
+    slug: string;
+    hospitalName: string;
+    createdAt: number;
+  } | null>(null);
+  const dupBypassRef = useRef(false);
 
   const [group, setGroup] = useState<string | null>(null);
   const [component, setComponent] = useState<"whole_blood" | "platelets">(
@@ -102,7 +114,7 @@ export default function RequestNew() {
       bloodGroup: t("request.bloodGroup"),
       component: t("request.whatNeeded"),
       units: t("request.units"),
-      hospitalId: t("request.hospital"),
+      hospitalId: t("request.where"),
       neededBy: t("request.when"),
       isDengue: t("request.dengue"),
     })[field] ?? field;
@@ -316,6 +328,25 @@ export default function RequestNew() {
     setBusy(true);
     setError(null);
     void (async () => {
+      // F-208: warn before posting when a similar request is already
+      // open (specs §3.2 SCR-M02). A failed check never blocks posting.
+      if (!dupBypassRef.current && appConfig?.features?.duplicateWarning === true) {
+        try {
+          const result = await convex.query(refs.requestsCheckDuplicate, {
+            bloodGroup: group,
+            hospitalId: hospitalId ?? undefined,
+            upazilaId: place.upazilaId ?? undefined,
+            districtId: place.districtId ?? undefined,
+          });
+          if (result.match) {
+            setDupMatch(result.match);
+            setBusy(false);
+            return;
+          }
+        } catch {
+          // fall through and post
+        }
+      }
       const args = {
         clientId: clientId(),
         bloodGroup: group as never,
@@ -359,6 +390,7 @@ export default function RequestNew() {
   };
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text accessibilityRole="header" style={styles.title}>
         {t("request.new")}
@@ -597,6 +629,37 @@ export default function RequestNew() {
 
       <Button label={busy ? t("request.posting") : t("request.post")} loading={busy} disabled={!canSubmit} onPress={submit} />
     </ScrollView>
+    <Sheet
+      visible={dupMatch !== null}
+      title={t("request.duplicate.title")}
+      onClose={() => setDupMatch(null)}
+    >
+      <Text style={styles.body}>
+        {t("request.duplicate.body", {
+          group: group ?? "",
+          hospital: dupMatch?.hospitalName ?? "",
+          time: dupMatch ? formatDateTime(dupMatch.createdAt, lang) : "",
+        })}
+      </Text>
+      <Button
+        label={t("request.duplicate.join")}
+        onPress={() => {
+          const slug = dupMatch?.slug;
+          setDupMatch(null);
+          if (slug) router.push({ pathname: "/r/[slug]", params: { slug } });
+        }}
+      />
+      <Button
+        label={t("request.duplicate.postAnyway")}
+        variant="ghost"
+        onPress={() => {
+          dupBypassRef.current = true;
+          setDupMatch(null);
+          submit();
+        }}
+      />
+    </Sheet>
+    </>
   );
 }
 
