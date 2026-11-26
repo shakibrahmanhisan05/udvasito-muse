@@ -9,7 +9,7 @@ import { recordEvent } from "./_lib/events";
 import { notifyUser, COMPONENT_LABEL } from "./_lib/notify";
 import { phoneOf } from "./_lib/visibility";
 import { eqRange } from "./_lib/db";
-import { canCreateRequest } from "./rules/limits";
+import { canCreateRequest, FARMING_WINDOW_DAYS, farmingSignals } from "./rules/limits";
 import { containsMoneyWord, normalisePhone, validateRequestForm } from "./rules/validation";
 import { haversineKm } from "./rules/ranking";
 import { pruneNoShows } from "./rules/alertPolicy";
@@ -246,6 +246,51 @@ export const create = memberMutationV({
         status: "open",
         isDemo: ctx.profile.isDemo,
       });
+    }
+
+    // F-803: request-farming patterns over the last 30 days (PRD §5.8)
+    // → at most one open moderation item per requester (queue is P5).
+    // `live/covered/closed` were fetched pre-insert, so the new request
+    // itself is appended explicitly.
+    const farmingCutoff = Date.now() - FARMING_WINDOW_DAYS * 86_400_000;
+    const recentRequests = [...live, ...covered, ...closed].filter(
+      (r) => r._creationTime >= farmingCutoff,
+    );
+    const signals = farmingSignals([
+      ...recentRequests.map((r) => ({
+        bloodGroup: r.bloodGroup,
+        hospitalId: r.hospitalId,
+        closeReason: r.closeReason,
+        unitsConfirmed: r.unitsConfirmed,
+      })),
+      {
+        bloodGroup: args.bloodGroup,
+        hospitalId: args.hospitalId,
+        unitsConfirmed: 0,
+      },
+    ]);
+    if (signals.length > 0) {
+      const openFlags = await ctx.db
+        .query("moderationItems")
+        .withIndex("by_status", (q) =>
+          q.eq("isDemo", ctx.profile.isDemo).eq("status", "open"),
+        )
+        .collect();
+      const alreadyFlagged = openFlags.some(
+        (item) =>
+          item.kind === "request_farming" && item.subjectId === ctx.profile._id,
+      );
+      if (!alreadyFlagged) {
+        await ctx.db.insert("moderationItems", {
+          type: "flag",
+          kind: "request_farming",
+          subjectId: ctx.profile._id,
+          requestId,
+          severity: "medium",
+          status: "open",
+          isDemo: ctx.profile.isDemo,
+        });
+      }
     }
 
     await recordEvent(ctx, "request_published", {
@@ -605,7 +650,7 @@ export const markDonorNotResponding = memberMutationV({
         noShowAt: [...pruneNoShows(donor.noShowAt, now, settings.noShowPenalty.days), now],
       });
     }
-    await recordEvent(ctx, "donor_not_responding", {
+    await recordEvent(ctx, "donor_not_responding_marked", {
       requestId: req._id,
       actorRole: ctx.profile.role,
       isDemo: req.isDemo,

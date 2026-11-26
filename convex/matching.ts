@@ -4,7 +4,7 @@ import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import type { DataModel, Doc, Id } from "./schemaTypes";
 import { getRulesSettings, getSetting, type RulesSettings } from "./_lib/settings";
 import { recordEvent } from "./_lib/events";
-import { recordContactReveal } from "./_lib/visibility";
+import { recordContactReveal, requesterUnderRevealCap } from "./_lib/visibility";
 import { notifyUser, COMPONENT_LABEL, formatTimeDhaka } from "./_lib/notify";
 import { eqRange } from "./_lib/db";
 import { groupsFor } from "./rules/compatibility";
@@ -22,7 +22,7 @@ import { alertAllowed, noShowCountWithin, startOfDhakaDay } from "./rules/alertP
  * Waves 1..S-10 run on S-09 intervals; compatible groups appear ONLY in
  * the final wave (S-11, OQ-03) and are flagged `compatibleGroup` so the
  * alert can be labelled. After the final wave's interval, `escalate`
- * notifies admins (on-duty volunteers join the fan-out in P3, F-704).
+ * notifies admins and on-duty district volunteers (F-704, P3).
  */
 
 type Ctx = GenericMutationCtx<DataModel>;
@@ -295,6 +295,9 @@ export const startRequest = internalMutationGeneric({
     const settings = await getRulesSettings(ctx);
     const candidates = await eligibleCandidates(ctx, request, settings);
     await ctx.db.patch(request._id, { zeroEligibleAtPublish: candidates.length === 0 });
+    // F-702/V09: on-duty volunteers covering the area are told about the
+    // new request at the same moment it publishes (NTF-03).
+    await notifyOnDutyVolunteers(ctx, request, "NTF-03");
     const delaySec = await getSetting<number>(ctx, "volunteerHotlineDelaySec");
     await ctx.scheduler.runAfter(delaySec * 1000, volunteerHotlineRef, {
       requestId: request._id,
@@ -304,6 +307,75 @@ export const startRequest = internalMutationGeneric({
     return await doWave(ctx, request, 1);
   },
 });
+
+/**
+ * On-duty, approved volunteers covering a request's area (its upazila,
+ * or its whole district), on the same side of the practice wall.
+ * Shared by the publish fan-out (NTF-03) and escalation (NTF-07, F-704).
+ */
+export async function onDutyVolunteersCovering(
+  ctx: Ctx,
+  request: Request,
+): Promise<{ vp: Doc<"volunteerProfiles">; profile: Doc<"profiles"> }[]> {
+  const onDuty = await ctx.db
+    .query("volunteerProfiles")
+    .withIndex(
+      "by_duty",
+      eqRange([["isDemo", request.isDemo], ["status", "approved"], ["onDuty", true]]),
+    )
+    .collect();
+  const out: { vp: Doc<"volunteerProfiles">; profile: Doc<"profiles"> }[] = [];
+  for (const vp of onDuty) {
+    let covers = vp.districtIds.includes(request.districtId) || vp.upazilaIds.includes(request.upazilaId);
+    if (!covers) {
+      // A thana-level roster in the same district still counts as
+      // covering the district for escalation (V03: "volunteers of that
+      // district") — resolve the thanas' parent districts.
+      for (const upazilaId of vp.upazilaIds) {
+        const upazila = await ctx.db.get(upazilaId);
+        if (upazila?.parentId === request.districtId) {
+          covers = true;
+          break;
+        }
+      }
+    }
+    if (!covers) continue;
+    const profile = await ctx.db.get(vp.profileId);
+    if (profile && profile.status === "active") out.push({ vp, profile });
+  }
+  return out;
+}
+
+async function notifyOnDutyVolunteers(
+  ctx: Ctx,
+  request: Request,
+  template: "NTF-03" | "NTF-07",
+): Promise<number> {
+  const covering = await onDutyVolunteersCovering(ctx, request);
+  const name = await hospitalName(ctx, request);
+  const area = await ctx.db.get(request.upazilaId);
+  const minutes = Math.max(1, Math.round((Date.now() - request._creationTime) / 60_000));
+  for (const { profile } of covering) {
+    await notifyUser(ctx, {
+      recipient: profile,
+      template,
+      requestId: request._id,
+      params:
+        template === "NTF-03"
+          ? {
+              area: area?.nameEn ?? "",
+              group: request.bloodGroup,
+              component: COMPONENT_LABEL[profile.language][request.component],
+              hospital: name,
+              time: formatTimeDhaka(request.neededBy),
+            }
+          : { group: request.bloodGroup, hospital: name, min: minutes },
+      url: `/volunteer/request/${request._id}`,
+      channelId: template === "NTF-07" ? "urgent-requests" : "updates",
+    });
+  }
+  return covering.length;
+}
 
 /** internal.matching.runWave (specs §6.6). */
 export const runWave = internalMutationGeneric({
@@ -316,10 +388,10 @@ export const runWave = internalMutationGeneric({
 });
 
 /**
- * internal.matching.escalate (specs §6.6, F-704 hook): one interval after
- * the final wave, if the request is still live with no confirmed donor and
- * no volunteer claim, notify the admins (NTF-07). On-duty volunteers in
- * the district join this fan-out in P3, when duty rosters exist.
+ * internal.matching.escalate (specs §6.6, F-704): one interval after
+ * the final wave, if the request is still live with no confirmed donor
+ * and no volunteer claim, notify the on-duty volunteers in the district
+ * AND the admins (NTF-07). `escalatedAt` makes it fire exactly once.
  */
 export const escalate = internalMutationGeneric({
   args: { requestId: v.id("requests") },
@@ -351,11 +423,12 @@ export const escalate = internalMutationGeneric({
         channelId: "urgent-requests",
       });
     }
+    const volunteersNotified = await notifyOnDutyVolunteers(ctx, request, "NTF-07");
     await ctx.db.patch(request._id, { escalatedAt: Date.now() });
     await recordEvent(ctx, "request_escalated", {
       requestId: request._id,
       actorRole: "system",
-      props: { admins: admins.length },
+      props: { admins: admins.length, volunteers: volunteersNotified },
       isDemo: request.isDemo,
     });
   },
@@ -384,6 +457,7 @@ export async function confirmStandbyResponse(
       .withIndex("by_request", eqRange([["requestId", request._id]]))
       .collect()).length > 0;
   await ctx.db.patch(response._id, { state: "confirmed", confirmedAt: now });
+  let revealed = false;
   if (!request.revealsFrozen) {
     const visibleDays = await getSetting<number>(ctx, "contactVisibleAfterCloseDays");
     const expiresAt = now + visibleDays * 86_400_000;
@@ -396,16 +470,31 @@ export async function confirmStandbyResponse(
       expiresAt,
       isDemo: request.isDemo,
     });
+    revealed = true;
     if (response.callMode === "mutual") {
-      await recordContactReveal(ctx, {
-        viewer: requester,
-        subject: donorProfile,
-        subjectRole: "donor",
-        requestId: request._id,
-        reason: "confirmed_slot",
-        expiresAt,
-        isDemo: request.isDemo,
-      });
+      // S-23 applies on EVERY reveal path (P2 review S3-F1): a promotion
+      // must not push the requester past the daily reveal cap.
+      if (await requesterUnderRevealCap(ctx, requester._id, now)) {
+        await recordContactReveal(ctx, {
+          viewer: requester,
+          subject: donorProfile,
+          subjectRole: "donor",
+          requestId: request._id,
+          reason: "confirmed_slot",
+          expiresAt,
+          isDemo: request.isDemo,
+        });
+      } else {
+        await recordEvent(ctx, "reveal_cap_reached", {
+          requestId: request._id,
+          actorRole: "system",
+          props: {
+            cap: await getSetting<number>(ctx, "revealsPerRequesterPerDay"),
+            via: "promotion",
+          },
+          isDemo: request.isDemo,
+        });
+      }
     }
     await recordEvent(ctx, "contact_shared", {
       requestId: request._id,
@@ -448,7 +537,9 @@ export async function confirmStandbyResponse(
     donorCallsBody: response.callMode === "donor_calls",
   });
   await scheduleStillComingChecks(ctx, { ...request, unitsConfirmed }, response._id);
-  if (!hadReveals) await scheduleConfirmationPrompt(ctx, request);
+  // Only arm the confirmation prompt when a reveal actually happened
+  // (P2 review S4-F7 — mirrors the accept path's `revealed &&` guard).
+  if (revealed && !hadReveals) await scheduleConfirmationPrompt(ctx, request);
 }
 
 /** First standby (earliest acceptor) for a request, if any. */

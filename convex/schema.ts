@@ -216,7 +216,10 @@ export default defineSchema({
     .index("by_request_donor", ["requestId", "donorProfileId"]),
 
   contactReveals: defineTable({
-    requestId: v.id("requests"),
+    // Optional since P3: an admin person-level reveal (F-805, SCR-A05)
+    // has no request context. Request-scoped reveals always set it.
+    // (Widening only — existing rows all carry a requestId.)
+    requestId: v.optional(v.id("requests")),
     viewerId: v.id("profiles"), subjectId: v.id("profiles"),
     subjectRole: v.union(v.literal("donor"), v.literal("requester"), v.literal("volunteer")),
     reason: v.union(v.literal("confirmed_slot"), v.literal("volunteer_hotline"), v.literal("volunteer_optin_call"),
