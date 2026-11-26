@@ -3,23 +3,22 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { Platform, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
-import {
-  useFonts,
-  NotoSans_400Regular,
-  NotoSans_600SemiBold,
-  NotoSans_700Bold,
-} from "@expo-google-fonts/noto-sans";
-import {
-  NotoSansBengali_400Regular,
-  NotoSansBengali_600SemiBold,
-  NotoSansBengali_700Bold,
-} from "@expo-google-fonts/noto-sans-bengali";
+import { useFonts } from "expo-font";
+// Per-weight subpath imports (P6 perf): importing the package roots
+// registers EVERY weight/italic as a bundled asset (27 TTFs ≈ 17 MB
+// in the web export); the subpaths register only the 6 fonts used.
+import { NotoSans_400Regular } from "@expo-google-fonts/noto-sans/400Regular";
+import { NotoSans_600SemiBold } from "@expo-google-fonts/noto-sans/600SemiBold";
+import { NotoSans_700Bold } from "@expo-google-fonts/noto-sans/700Bold";
+import { NotoSansBengali_400Regular } from "@expo-google-fonts/noto-sans-bengali/400Regular";
+import { NotoSansBengali_600SemiBold } from "@expo-google-fonts/noto-sans-bengali/600SemiBold";
+import { NotoSansBengali_700Bold } from "@expo-google-fonts/noto-sans-bengali/700Bold";
 import { ConvexReactClient, useMutation, useQuery } from "convex/react";
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import Constants from "expo-constants";
 import { initI18n } from "@/lib/i18n";
 import { initSentry } from "@/lib/sentry";
-import { getLocalConsent } from "@/lib/consent";
+import { getLocalConsent, consentSatisfies } from "@/lib/consent";
 import { FALLBACK_APP_CONFIG, isVersionBelow } from "@/lib/appConfig";
 import { authClient, convexUrl, isAuthConfigured } from "@/lib/auth-client";
 import { refs } from "@/lib/refs";
@@ -45,14 +44,26 @@ function useGates(fontsLoaded: boolean) {
   const segments = useSegments();
   const router = useRouter();
   const session = authClient.useSession();
-  const [consentOk, setConsentOk] = useState<boolean | null>(null);
+  // G3 compares the local record against the CURRENT consent version
+  // from the server (public.appConfig → settings.consentVersion), not
+  // the compiled-in fallback: when the team advances the version after
+  // the law review (DEP-02), every older local record stops satisfying
+  // the gate and the member re-consents once. The fallback applies
+  // only while the backend is unreachable/unconfigured; for signed-in
+  // members ProfileGate's server-side needsConsent is the backstop.
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
+  const [localVersion, setLocalVersion] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     void (async () => {
       const local = await getLocalConsent();
-      setConsentOk(Boolean(local && local.consentVersion === FALLBACK_APP_CONFIG.consentVersion));
+      setLocalVersion(local?.consentVersion ?? null);
     })();
   }, [segments]);
+
+  const currentVersion = appConfig?.consentVersion ?? FALLBACK_APP_CONFIG.consentVersion;
+  const consentOk =
+    localVersion !== undefined && consentSatisfies(localVersion, currentVersion);
 
   // Web Push service worker (public/service-worker.js) — web only.
   useEffect(() => {
@@ -64,7 +75,7 @@ function useGates(fontsLoaded: boolean) {
   }, []);
 
   useEffect(() => {
-    if (!fontsLoaded || consentOk === null) return;
+    if (!fontsLoaded || localVersion === undefined) return;
     const group = segments[0];
     const inApp = group === "(app)";
     const route = segments[segments.length - 1];
@@ -85,9 +96,9 @@ function useGates(fontsLoaded: boolean) {
       router.replace("/(onboarding)/sign-in");
       return;
     }
-  }, [fontsLoaded, consentOk, segments, session.isPending, session.data, router]);
+  }, [fontsLoaded, consentOk, localVersion, segments, session.isPending, session.data, router]);
 
-  return { ready: fontsLoaded && consentOk !== null };
+  return { ready: fontsLoaded && localVersion !== undefined };
 }
 
 /** G5/G6 — profile completeness + account status, from profiles.me. */

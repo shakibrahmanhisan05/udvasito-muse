@@ -20,7 +20,12 @@ export function Sheet(props: {
       animationType="slide"
       onRequestClose={props.onClose}
     >
-      <Pressable style={styles.backdrop} onPress={props.onClose} accessibilityLabel={props.title}>
+      <Pressable
+        style={styles.backdrop}
+        onPress={props.onClose}
+        accessibilityRole="button"
+        accessibilityLabel={props.title}
+      >
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <Text accessibilityRole="header" style={styles.title}>
             {props.title}

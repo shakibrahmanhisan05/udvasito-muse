@@ -14,6 +14,7 @@ export const appConfig = queryGeneric({
     const [
       minimumAppVersion, latestAppVersion, consentVersion, features,
       demoAreaEnabled, emailSignInEnabled, apkUrl, apkSha256, verification, aiFeatures,
+      contactEmail, medicalReviewer,
     ] = await Promise.all([
       getSetting<string>(ctx, "minimumAppVersion"),
       getSetting<string>(ctx, "latestAppVersion"),
@@ -28,6 +29,12 @@ export const appConfig = queryGeneric({
         telegramBot: string; whatsappNumber: string;
       }>(ctx, "verification"),
       getSetting<Record<string, boolean>>(ctx, "ai.features"),
+      // Public-by-design values for the SCR-P01 footer / SCR-P05 About
+      // page: the team's published contact address and the medical
+      // reviewer's credit (OQ-10 / OQ-01). Empty until the team sets
+      // them; the pages render them only when present.
+      getSetting<string>(ctx, "contactEmail"),
+      getSetting<{ name: string; reviewedAt: number }>(ctx, "medicalReviewer"),
     ]);
     return {
       minimumAppVersion,
@@ -40,6 +47,8 @@ export const appConfig = queryGeneric({
       apkSha256,
       verification,
       aiFeatures,
+      contactEmail,
+      medicalReviewer,
     };
   },
 });

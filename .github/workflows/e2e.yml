@@ -1,0 +1,54 @@
+name: e2e
+
+# X04 axe gate on every PR; the practice-area smoke test runs before
+# production deploys (workflow_dispatch, or push to main when the
+# E2E repo variable + secrets are configured — see smoke.spec.ts).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  a11y:
+    name: axe accessibility (10 key pages)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run axe suite
+        # playwright.config.ts starts the Expo web server itself
+        # (webServer: npm run web) on port 8081.
+        run: npx playwright test tests/e2e/a11y.spec.ts
+
+  smoke:
+    name: practice-area smoke (post → match → accept)
+    # Skips cleanly until the team sets E2E_ENABLED=true (repo
+    # variable) and the practice credentials (secrets) — the spec
+    # itself also self-skips when the env is absent.
+    if: vars.E2E_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run smoke test against the deployed practice area
+        env:
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_PRACTICE_ID: ${{ secrets.E2E_PRACTICE_ID }}
+          E2E_PRACTICE_PIN: ${{ secrets.E2E_PRACTICE_PIN }}
+          E2E_DONOR_ID: ${{ secrets.E2E_DONOR_ID }}
+          E2E_DONOR_PIN: ${{ secrets.E2E_DONOR_PIN }}
+        run: npx playwright test tests/e2e/smoke.spec.ts

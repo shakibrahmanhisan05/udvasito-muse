@@ -28,6 +28,7 @@ type Detail = {
     hospitalName: string;
     status: string;
     hiddenByModerator: boolean;
+    revealsFrozen: boolean;
   } | null;
   subjectHistory: {
     requests: number;
@@ -35,6 +36,7 @@ type Detail = {
     reportsAbout: number;
     revealsAsViewer: number;
     revealsAsSubject: number;
+    status: string;
   } | null;
   auditTrail: { action: string; actorRole: string; reason: string | null; createdAt: number }[];
 };
@@ -43,6 +45,12 @@ const DECISIONS = ["dismiss", "warn", "hide_request", "suspend", "ban", "restore
 // Specs §3.6 prose without i18n keys (I18N-GAPS §4), pending key review.
 const TITLE = "Moderation queue";
 const HIDDEN = "hidden";
+// SCR-A03's freeze choice ("lifts or keeps automatic freezes as
+// chosen") — same unkeyed-prose treatment as the decision labels.
+const FREEZE_LABEL = "Automatic freeze from this report";
+const FREEZE_LIFT = "Lift the freeze";
+const FREEZE_KEEP = "Keep the freeze";
+const SUSPEND_DAYS_LABEL = "Suspend days (1–30)";
 
 /**
  * SCR-A03 — Moderation decision (F-803). The reason field reuses the
@@ -63,8 +71,20 @@ export default function AdminModerationItem() {
   const decide = useMutation(refs.moderationDecide);
   const [reason, setReason] = useState("");
   const [suspendDays, setSuspendDays] = useState("");
+  const [freezeChoice, setFreezeChoice] = useState<"lift" | "keep" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // Auto-freezes from THIS item that are still in place (PRD §5.8):
+  // dismiss/warn must choose lift or keep (server enforces it too).
+  const accountFrozen =
+    Boolean(detail?.reports.some((r) => r.autoAction === "account_frozen")) &&
+    detail?.subjectHistory?.status === "frozen";
+  const revealsFrozen =
+    Boolean(detail?.reports.some((r) => r.autoAction === "reveals_frozen")) &&
+    detail?.request?.revealsFrozen === true;
+  const hasFreeze = accountFrozen || revealsFrozen;
+  const needsChoice = (d: string) => hasFreeze && (d === "dismiss" || d === "warn");
 
   const run = (decision: (typeof DECISIONS)[number]) => {
     setError(null);
@@ -74,6 +94,10 @@ export default function AdminModerationItem() {
       decision,
       reason: reason.trim(),
       suspendDays: decision === "suspend" ? Number(suspendDays) : undefined,
+      freezeChoice:
+        decision === "dismiss" || decision === "warn"
+          ? (freezeChoice ?? undefined)
+          : undefined,
     })
       .then(() => setDone(true))
       .catch((e) => setError(errorText(t, e)));
@@ -141,13 +165,34 @@ export default function AdminModerationItem() {
             value={suspendDays}
             onChangeText={setSuspendDays}
             keyboardType="number-pad"
+            accessibilityLabel={SUSPEND_DAYS_LABEL}
           />
+          {hasFreeze ? (
+            <>
+              <Text style={styles.label}>{FREEZE_LABEL}</Text>
+              <View style={styles.freezeRow}>
+                <Button
+                  label={FREEZE_LIFT}
+                  variant={freezeChoice === "lift" ? "primary" : "secondary"}
+                  onPress={() => setFreezeChoice("lift")}
+                />
+                <Button
+                  label={FREEZE_KEEP}
+                  variant={freezeChoice === "keep" ? "primary" : "secondary"}
+                  onPress={() => setFreezeChoice("keep")}
+                />
+              </View>
+            </>
+          ) : null}
           {DECISIONS.map((decision) => (
             <Button
               key={decision}
               label={decision}
               variant={decision === "ban" ? "danger" : "secondary"}
-              disabled={reason.trim().length < 5}
+              disabled={
+                reason.trim().length < 5 ||
+                (needsChoice(decision) && freezeChoice === null)
+              }
               onPress={() => run(decision)}
             />
           ))}
@@ -179,6 +224,7 @@ const styles = StyleSheet.create({
   bodyStrong: { ...typography.bodyStrong, color: colors.text.primary },
   help: { ...typography.small, color: colors.text.muted },
   label: { ...typography.bodyStrong, color: colors.text.primary },
+  freezeRow: { flexDirection: "row", gap: spacing.md, flexWrap: "wrap" },
   input: {
     minHeight: 52,
     borderWidth: 1,

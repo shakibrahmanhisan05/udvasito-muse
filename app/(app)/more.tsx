@@ -15,6 +15,7 @@ import { refs } from "@/lib/refs";
 // pending member 3's key review.
 const MODERATION_QUEUE = "Moderation queue";
 const AUDIT_LOG = "Audit log";
+const ABOUT = "About UDVASITO";
 
 export default function More() {
   const { t } = useTranslation();
@@ -95,6 +96,11 @@ export default function More() {
           label={t("update.download")}
           variant="secondary"
           onPress={() => router.push("/download")}
+        />
+        <Button
+          label={ABOUT}
+          variant="secondary"
+          onPress={() => router.push("/about")}
         />
         <Button
           label={t("welcome.privacy")}
