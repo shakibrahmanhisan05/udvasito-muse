@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { E2E_BASE_URL as BASE, PRACTICE, hasPracticeEnv, practiceSignIn } from "./practice";
 
 /**
  * Practice-area smoke test (roadmap P6 / PRD §2.3 shape):
@@ -20,36 +21,25 @@ import { test, expect, type Page } from "@playwright/test";
  *
  * CI: .github/workflows/e2e.yml runs this before production deploys
  * when the repo variable E2E_ENABLED=true and the secrets exist.
+ * The sign-in flow itself lives in ./practice.ts (shared with the
+ * authenticated axe pass) — P7 verified it against the real sheet
+ * behaviour of SCR-002 and fixed the drift noted there.
  */
-const BASE = process.env.E2E_BASE_URL ?? process.env.PLAYWRIGHT_BASE_URL;
-const REQ_ID = process.env.E2E_PRACTICE_ID;
-const REQ_PIN = process.env.E2E_PRACTICE_PIN;
-const DONOR_ID = process.env.E2E_DONOR_ID;
-const DONOR_PIN = process.env.E2E_DONOR_PIN;
+const REQ_ID = PRACTICE.requesterId;
+const REQ_PIN = PRACTICE.requesterPin;
+const DONOR_ID = PRACTICE.donorId;
+const DONOR_PIN = PRACTICE.donorPin;
 
 test.describe("practice area: post → match → accept", () => {
   test.skip(
-    !BASE || !REQ_ID || !REQ_PIN || !DONOR_ID || !DONOR_PIN,
+    !hasPracticeEnv,
     "needs E2E_BASE_URL + practice requester/donor credentials (see header)",
   );
-
-  async function practiceSignIn(page: Page, id: string, pin: string) {
-    await page.goto(`${BASE}/sign-in`);
-    await page.getByLabel("Practice ID").fill(id);
-    await page.getByLabel("6-digit PIN").fill(pin);
-    await page
-      .getByRole("button", { name: "Practice sign-in (for judges and training)" })
-      .click();
-    // The PRACTICE pill (common.demo) proves we are inside the wall.
-    await expect(page.getByText("PRACTICE", { exact: true }).first()).toBeVisible({
-      timeout: 20_000,
-    });
-  }
 
   test("the full loop", async ({ browser }) => {
     const requester = await browser.newContext();
     const reqPage = await requester.newPage();
-    await practiceSignIn(reqPage, REQ_ID!, REQ_PIN!);
+    await practiceSignIn(reqPage, BASE!, REQ_ID!, REQ_PIN!);
 
     // Post: home → request form.
     await reqPage.getByRole("button", { name: "Request blood now" }).click();
@@ -72,7 +62,7 @@ test.describe("practice area: post → match → accept", () => {
     // Match + accept: the donor sees the alert and confirms.
     const donor = await browser.newContext();
     const donorPage = await donor.newPage();
-    await practiceSignIn(donorPage, DONOR_ID!, DONOR_PIN!);
+    await practiceSignIn(donorPage, BASE!, DONOR_ID!, DONOR_PIN!);
     await donorPage.goto(`${BASE}/alerts`);
     const alertCard = donorPage.getByText(/B\+.*needed/i).first();
     await expect(alertCard).toBeVisible({ timeout: 30_000 });
