@@ -41,13 +41,33 @@ export const seedPlaces = internalMutationGeneric({
         idByCode.set(row.code, await ctx.db.insert("places", { ...doc, neighbourIds: [] }));
       }
     }
+    // Pass 2 resolves links. A code missing from this call (a partial
+    // re-seed — e.g. one district at a time, or a single row) falls back
+    // to the row already in the database. Without the fallback, a
+    // chunked seed silently unlinks every row whose parent or neighbours
+    // were upserted by an earlier call (found in production, 2026-11-26).
+    const resolveId = async (
+      code: string,
+    ): Promise<Id<"places"> | undefined> => {
+      const cached = idByCode.get(code);
+      if (cached) return cached;
+      const found = await ctx.db
+        .query("places")
+        .withIndex("by_code", (q) => q.eq("code", code))
+        .unique();
+      if (found) idByCode.set(code, found._id);
+      return found?._id;
+    };
     for (const row of args.rows) {
       const id = idByCode.get(row.code) as Id<"places">;
+      const neighbourIds: Id<"places">[] = [];
+      for (const code of row.neighbourCodes) {
+        const nid = await resolveId(code);
+        if (nid) neighbourIds.push(nid);
+      }
       await ctx.db.patch(id, {
-        parentId: row.parentCode ? idByCode.get(row.parentCode) : undefined,
-        neighbourIds: row.neighbourCodes
-          .map((c) => idByCode.get(c))
-          .filter((x): x is Id<"places"> => x !== undefined),
+        parentId: row.parentCode ? await resolveId(row.parentCode) : undefined,
+        neighbourIds,
       });
     }
     return { upserted: args.rows.length };
