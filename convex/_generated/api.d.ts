@@ -1,1 +1,199 @@
-LyogZXNsaW50LWRpc2FibGUgKi8KLyoqCiAqIEdlbmVyYXRlZCBgYXBpYCB1dGlsaXR5LgogKgogKiBUSElTIENPREUgSVMgQVVUT01BVElDQUxMWSBHRU5FUkFURUQuCiAqCiAqIFRvIHJlZ2VuZXJhdGUsIHJ1biBgbnB4IGNvbnZleCBkZXZgLgogKiBAbW9kdWxlCiAqLwoKaW1wb3J0IHR5cGUgKiBhcyBfbGliX2F1ZGl0IGZyb20gIi4uL19saWIvYXVkaXQuanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfYXV0aCBmcm9tICIuLi9fbGliL2F1dGguanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfZGIgZnJvbSAiLi4vX2xpYi9kYi5qcyI7CmltcG9ydCB0eXBlICogYXMgX2xpYl9kb25vckxpdmUgZnJvbSAiLi4vX2xpYi9kb25vckxpdmUuanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfZXJyb3JzIGZyb20gIi4uL19saWIvZXJyb3JzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBfbGliX2V2ZW50cyBmcm9tICIuLi9fbGliL2V2ZW50cy5qcyI7CmltcG9ydCB0eXBlICogYXMgX2xpYl9ub3RpZnkgZnJvbSAiLi4vX2xpYi9ub3RpZnkuanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfcHJhY3RpY2UgZnJvbSAiLi4vX2xpYi9wcmFjdGljZS5qcyI7CmltcG9ydCB0eXBlICogYXMgX2xpYl9yYXRlbGltaXQgZnJvbSAiLi4vX2xpYi9yYXRlbGltaXQuanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfc2V0dGluZ3MgZnJvbSAiLi4vX2xpYi9zZXR0aW5ncy5qcyI7CmltcG9ydCB0eXBlICogYXMgX2xpYl9zZXR0aW5nc0RhdGEgZnJvbSAiLi4vX2xpYi9zZXR0aW5nc0RhdGEuanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfdmlzaWJpbGl0eSBmcm9tICIuLi9fbGliL3Zpc2liaWxpdHkuanMiOwppbXBvcnQgdHlwZSAqIGFzIF9saWJfd2ViUHVzaENyeXB0byBmcm9tICIuLi9fbGliL3dlYlB1c2hDcnlwdG8uanMiOwppbXBvcnQgdHlwZSAqIGFzIGFkbWluX2FpIGZyb20gIi4uL2FkbWluL2FpLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBhZG1pbl9hdWRpdCBmcm9tICIuLi9hZG1pbi9hdWRpdC5qcyI7CmltcG9ydCB0eXBlICogYXMgYWRtaW5fYm9vdHN0cmFwIGZyb20gIi4uL2FkbWluL2Jvb3RzdHJhcC5qcyI7CmltcG9ydCB0eXBlICogYXMgYWRtaW5fZGF0YSBmcm9tICIuLi9hZG1pbi9kYXRhLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBhZG1pbl9kZW1vIGZyb20gIi4uL2FkbWluL2RlbW8uanMiOwppbXBvcnQgdHlwZSAqIGFzIGFkbWluX2RpcmVjdG9yeSBmcm9tICIuLi9hZG1pbi9kaXJlY3RvcnkuanMiOwppbXBvcnQgdHlwZSAqIGFzIGFkbWluX2ZhcSBmcm9tICIuLi9hZG1pbi9mYXEuanMiOwppbXBvcnQgdHlwZSAqIGFzIGFkbWluX21vZGVyYXRpb24gZnJvbSAiLi4vYWRtaW4vbW9kZXJhdGlvbi5qcyI7CmltcG9ydCB0eXBlICogYXMgYWRtaW5fb3BzIGZyb20gIi4uL2FkbWluL29wcy5qcyI7CmltcG9ydCB0eXBlICogYXMgYWRtaW5fcGVvcGxlIGZyb20gIi4uL2FkbWluL3Blb3BsZS5qcyI7CmltcG9ydCB0eXBlICogYXMgYWRtaW5fc2V0dGluZ3MgZnJvbSAiLi4vYWRtaW4vc2V0dGluZ3MuanMiOwppbXBvcnQgdHlwZSAqIGFzIGFkbWluX3N1bW1hcnkgZnJvbSAiLi4vYWRtaW4vc3VtbWFyeS5qcyI7CmltcG9ydCB0eXBlICogYXMgYWRtaW5fdXNhZ2UgZnJvbSAiLi4vYWRtaW4vdXNhZ2UuanMiOwppbXBvcnQgdHlwZSAqIGFzIGFpX2dlbWluaSBmcm9tICIuLi9haS9nZW1pbmkuanMiOwppbXBvcnQgdHlwZSAqIGFzIGFzc2lzdGFudCBmcm9tICIuLi9hc3Npc3RhbnQuanMiOwppbXBvcnQgdHlwZSAqIGFzIGF1dGggZnJvbSAiLi4vYXV0aC5qcyI7CmltcG9ydCB0eXBlICogYXMgYmxvY2tzIGZyb20gIi4uL2Jsb2Nrcy5qcyI7CmltcG9ydCB0eXBlICogYXMgY2FtcGFpZ25zIGZyb20gIi4uL2NhbXBhaWducy5qcyI7CmltcG9ydCB0eXBlICogYXMgY29uc2VudHMgZnJvbSAiLi4vY29uc2VudHMuanMiOwppbXBvcnQgdHlwZSAqIGFzIGNyb25zIGZyb20gIi4uL2Nyb25zLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBkb25vcnMgZnJvbSAiLi4vZG9ub3JzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBob3NwaXRhbHMgZnJvbSAiLi4vaG9zcGl0YWxzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBodHRwIGZyb20gIi4uL2h0dHAuanMiOwppbXBvcnQgdHlwZSAqIGFzIGludGFrZSBmcm9tICIuLi9pbnRha2UuanMiOwppbXBvcnQgdHlwZSAqIGFzIGxpZmVjeWNsZSBmcm9tICIuLi9saWZlY3ljbGUuanMiOwppbXBvcnQgdHlwZSAqIGFzIG1hdGNoaW5nIGZyb20gIi4uL21hdGNoaW5nLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBub3RpZmljYXRpb25zIGZyb20gIi4uL25vdGlmaWNhdGlvbnMuanMiOwppbXBvcnQgdHlwZSAqIGFzIHBob25lVmVyaWZpY2F0aW9uIGZyb20gIi4uL3Bob25lVmVyaWZpY2F0aW9uLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBwbGFjZXMgZnJvbSAiLi4vcGxhY2VzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBwcm9maWxlcyBmcm9tICIuLi9wcm9maWxlcy5qcyI7CmltcG9ydCB0eXBlICogYXMgcHVibGljXyBmcm9tICIuLi9wdWJsaWMuanMiOwppbXBvcnQgdHlwZSAqIGFzIHB1c2ggZnJvbSAiLi4vcHVzaC5qcyI7CmltcG9ydCB0eXBlICogYXMgcHVzaFdlYiBmcm9tICIuLi9wdXNoV2ViLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyByZW1pbmRlcnMgZnJvbSAiLi4vcmVtaW5kZXJzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyByZXBvcnRzIGZyb20gIi4uL3JlcG9ydHMuanMiOwppbXBvcnQgdHlwZSAqIGFzIHJlcXVlc3RzIGZyb20gIi4uL3JlcXVlc3RzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyByZXNwb25zZXMgZnJvbSAiLi4vcmVzcG9uc2VzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyByZXRlbnRpb24gZnJvbSAiLi4vcmV0ZW50aW9uLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBydWxlc19hbGVydFBvbGljeSBmcm9tICIuLi9ydWxlcy9hbGVydFBvbGljeS5qcyI7CmltcG9ydCB0eXBlICogYXMgcnVsZXNfYXBwZWFsIGZyb20gIi4uL3J1bGVzL2FwcGVhbC5qcyI7CmltcG9ydCB0eXBlICogYXMgcnVsZXNfY29tcGF0aWJpbGl0eSBmcm9tICIuLi9ydWxlcy9jb21wYXRpYmlsaXR5LmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBydWxlc19jc3YgZnJvbSAiLi4vcnVsZXMvY3N2LmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBydWxlc19kdXBsaWNhdGVzIGZyb20gIi4uL3J1bGVzL2R1cGxpY2F0ZXMuanMiOwppbXBvcnQgdHlwZSAqIGFzIHJ1bGVzX2VsaWdpYmlsaXR5IGZyb20gIi4uL3J1bGVzL2VsaWdpYmlsaXR5LmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBydWxlc19mYXFNYXRjaCBmcm9tICIuLi9ydWxlcy9mYXFNYXRjaC5qcyI7CmltcG9ydCB0eXBlICogYXMgcnVsZXNfaW50YWtlUGFyc2VyIGZyb20gIi4uL3J1bGVzL2ludGFrZVBhcnNlci5qcyI7CmltcG9ydCB0eXBlICogYXMgcnVsZXNfbGltaXRzIGZyb20gIi4uL3J1bGVzL2xpbWl0cy5qcyI7CmltcG9ydCB0eXBlICogYXMgcnVsZXNfbW9kZXJhdGlvbiBmcm9tICIuLi9ydWxlcy9tb2RlcmF0aW9uLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBydWxlc19yYW5raW5nIGZyb20gIi4uL3J1bGVzL3JhbmtpbmcuanMiOwppbXBvcnQgdHlwZSAqIGFzIHJ1bGVzX3JlZGFjdGlvbiBmcm9tICIuLi9ydWxlcy9yZWRhY3Rpb24uanMiOwppbXBvcnQgdHlwZSAqIGFzIHJ1bGVzX3N0YXRzIGZyb20gIi4uL3J1bGVzL3N0YXRzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBydWxlc192YWxpZGF0aW9uIGZyb20gIi4uL3J1bGVzL3ZhbGlkYXRpb24uanMiOwppbXBvcnQgdHlwZSAqIGFzIHJ1bGVzX3dhdmVzIGZyb20gIi4uL3J1bGVzL3dhdmVzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBzY2hlbWFUeXBlcyBmcm9tICIuLi9zY2hlbWFUeXBlcy5qcyI7CmltcG9ydCB0eXBlICogYXMgc2VlZCBmcm9tICIuLi9zZWVkLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBzaGFyZSBmcm9tICIuLi9zaGFyZS5qcyI7CmltcG9ydCB0eXBlICogYXMgc2xpcHMgZnJvbSAiLi4vc2xpcHMuanMiOwppbXBvcnQgdHlwZSAqIGFzIHN0YXRzIGZyb20gIi4uL3N0YXRzLmpzIjsKaW1wb3J0IHR5cGUgKiBhcyBzdXBwb3J0IGZyb20gIi4uL3N1cHBvcnQuanMiOwppbXBvcnQgdHlwZSAqIGFzIHRlbGVncmFtQWRtaW4gZnJvbSAiLi4vdGVsZWdyYW1BZG1pbi5qcyI7CmltcG9ydCB0eXBlICogYXMgdm9sdW50ZWVycyBmcm9tICIuLi92b2x1bnRlZXJzLmpzIjsKCmltcG9ydCB0eXBlIHsKICBBcGlGcm9tTW9kdWxlcywKICBGaWx0ZXJBcGksCiAgRnVuY3Rpb25SZWZlcmVuY2UsCn0gZnJvbSAiY29udmV4L3NlcnZlciI7CgpkZWNsYXJlIGNvbnN0IGZ1bGxBcGk6IEFwaUZyb21Nb2R1bGVzPHsKICAiX2xpYi9hdWRpdCI6IHR5cGVvZiBfbGliX2F1ZGl0OwogICJfbGliL2F1dGgiOiB0eXBlb2YgX2xpYl9hdXRoOwogICJfbGliL2RiIjogdHlwZW9mIF9saWJfZGI7CiAgIl9saWIvZG9ub3JMaXZlIjogdHlwZW9mIF9saWJfZG9ub3JMaXZlOwogICJfbGliL2Vycm9ycyI6IHR5cGVvZiBfbGliX2Vycm9yczsKICAiX2xpYi9ldmVudHMiOiB0eXBlb2YgX2xpYl9ldmVudHM7CiAgIl9saWIvbm90aWZ5IjogdHlwZW9mIF9saWJfbm90aWZ5OwogICJfbGliL3ByYWN0aWNlIjogdHlwZW9mIF9saWJfcHJhY3RpY2U7CiAgIl9saWIvcmF0ZWxpbWl0IjogdHlwZW9mIF9saWJfcmF0ZWxpbWl0OwogICJfbGliL3NldHRpbmdzIjogdHlwZW9mIF9saWJfc2V0dGluZ3M7CiAgIl9saWIvc2V0dGluZ3NEYXRhIjogdHlwZW9mIF9saWJfc2V0dGluZ3NEYXRhOwogICJfbGliL3Zpc2liaWxpdHkiOiB0eXBlb2YgX2xpYl92aXNpYmlsaXR5OwogICJfbGliL3dlYlB1c2hDcnlwdG8iOiB0eXBlb2YgX2xpYl93ZWJQdXNoQ3J5cHRvOwogICJhZG1pbi9haSI6IHR5cGVvZiBhZG1pbl9haTsKICAiYWRtaW4vYXVkaXQiOiB0eXBlb2YgYWRtaW5fYXVkaXQ7CiAgImFkbWluL2Jvb3RzdHJhcCI6IHR5cGVvZiBhZG1pbl9ib290c3RyYXA7CiAgImFkbWluL2RhdGEiOiB0eXBlb2YgYWRtaW5fZGF0YTsKICAiYWRtaW4vZGVtbyI6IHR5cGVvZiBhZG1pbl9kZW1vOwogICJhZG1pbi9kaXJlY3RvcnkiOiB0eXBlb2YgYWRtaW5fZGlyZWN0b3J5OwogICJhZG1pbi9mYXEiOiB0eXBlb2YgYWRtaW5fZmFxOwogICJhZG1pbi9tb2RlcmF0aW9uIjogdHlwZW9mIGFkbWluX21vZGVyYXRpb247CiAgImFkbWluL29wcyI6IHR5cGVvZiBhZG1pbl9vcHM7CiAgImFkbWluL3Blb3BsZSI6IHR5cGVvZiBhZG1pbl9wZW9wbGU7CiAgImFkbWluL3NldHRpbmdzIjogdHlwZW9mIGFkbWluX3NldHRpbmdzOwogICJhZG1pbi9zdW1tYXJ5IjogdHlwZW9mIGFkbWluX3N1bW1hcnk7CiAgImFkbWluL3VzYWdlIjogdHlwZW9mIGFkbWluX3VzYWdlOwogICJhaS9nZW1pbmkiOiB0eXBlb2YgYWlfZ2VtaW5pOwogIGFzc2lzdGFudDogdHlwZW9mIGFzc2lzdGFudDsKICBhdXRoOiB0eXBlb2YgYXV0aDsKICBibG9ja3M6IHR5cGVvZiBibG9ja3M7CiAgY2FtcGFpZ25zOiB0eXBlb2YgY2FtcGFpZ25zOwogIGNvbnNlbnRzOiB0eXBlb2YgY29uc2VudHM7CiAgY3JvbnM6IHR5cGVvZiBjcm9uczsKICBkb25vcnM6IHR5cGVvZiBkb25vcnM7CiAgaG9zcGl0YWxzOiB0eXBlb2YgaG9zcGl0YWxzOwogIGh0dHA6IHR5cGVvZiBodHRwOwogIGludGFrZTogdHlwZW9mIGludGFrZTsKICBsaWZlY3ljbGU6IHR5cGVvZiBsaWZlY3ljbGU7CiAgbWF0Y2hpbmc6IHR5cGVvZiBtYXRjaGluZzsKICBub3RpZmljYXRpb25zOiB0eXBlb2Ygbm90aWZpY2F0aW9uczsKICBwaG9uZVZlcmlmaWNhdGlvbjogdHlwZW9mIHBob25lVmVyaWZpY2F0aW9uOwogIHBsYWNlczogdHlwZW9mIHBsYWNlczsKICBwcm9maWxlczogdHlwZW9mIHByb2ZpbGVzOwogIHB1YmxpYzogdHlwZW9mIHB1YmxpY187CiAgcHVzaDogdHlwZW9mIHB1c2g7CiAgcHVzaFdlYjogdHlwZW9mIHB1c2hXZWI7CiAgcmVtaW5kZXJzOiB0eXBlb2YgcmVtaW5kZXJzOwogIHJlcG9ydHM6IHR5cGVvZiByZXBvcnRzOwogIHJlcXVlc3RzOiB0eXBlb2YgcmVxdWVzdHM7CiAgcmVzcG9uc2VzOiB0eXBlb2YgcmVzcG9uc2VzOwogIHJldGVudGlvbjogdHlwZW9mIHJldGVudGlvbjsKICAicnVsZXMvYWxlcnRQb2xpY3kiOiB0eXBlb2YgcnVsZXNfYWxlcnRQb2xpY3k7CiAgInJ1bGVzL2FwcGVhbCI6IHR5cGVvZiBydWxlc19hcHBlYWw7CiAgInJ1bGVzL2NvbXBhdGliaWxpdHkiOiB0eXBlb2YgcnVsZXNfY29tcGF0aWJpbGl0eTsKICAicnVsZXMvY3N2IjogdHlwZW9mIHJ1bGVzX2NzdjsKICAicnVsZXMvZHVwbGljYXRlcyI6IHR5cGVvZiBydWxlc19kdXBsaWNhdGVzOwogICJydWxlcy9lbGlnaWJpbGl0eSI6IHR5cGVvZiBydWxlc19lbGlnaWJpbGl0eTsKICAicnVsZXMvZmFxTWF0Y2giOiB0eXBlb2YgcnVsZXNfZmFxTWF0Y2g7CiAgInJ1bGVzL2ludGFrZVBhcnNlciI6IHR5cGVvZiBydWxlc19pbnRha2VQYXJzZXI7CiAgInJ1bGVzL2xpbWl0cyI6IHR5cGVvZiBydWxlc19saW1pdHM7CiAgInJ1bGVzL21vZGVyYXRpb24iOiB0eXBlb2YgcnVsZXNfbW9kZXJhdGlvbjsKICAicnVsZXMvcmFua2luZyI6IHR5cGVvZiBydWxlc19yYW5raW5nOwogICJydWxlcy9yZWRhY3Rpb24iOiB0eXBlb2YgcnVsZXNfcmVkYWN0aW9uOwogICJydWxlcy9zdGF0cyI6IHR5cGVvZiBydWxlc19zdGF0czsKICAicnVsZXMvdmFsaWRhdGlvbiI6IHR5cGVvZiBydWxlc192YWxpZGF0aW9uOwogICJydWxlcy93YXZlcyI6IHR5cGVvZiBydWxlc193YXZlczsKICBzY2hlbWFUeXBlczogdHlwZW9mIHNjaGVtYVR5cGVzOwogIHNlZWQ6IHR5cGVvZiBzZWVkOwogIHNoYXJlOiB0eXBlb2Ygc2hhcmU7CiAgc2xpcHM6IHR5cGVvZiBzbGlwczsKICBzdGF0czogdHlwZW9mIHN0YXRzOwogIHN1cHBvcnQ6IHR5cGVvZiBzdXBwb3J0OwogIHRlbGVncmFtQWRtaW46IHR5cGVvZiB0ZWxlZ3JhbUFkbWluOwogIHZvbHVudGVlcnM6IHR5cGVvZiB2b2x1bnRlZXJzOwp9PjsKCi8qKgogKiBBIHV0aWxpdHkgZm9yIHJlZmVyZW5jaW5nIENvbnZleCBmdW5jdGlvbnMgaW4geW91ciBhcHAncyBwdWJsaWMgQVBJLgogKgogKiBVc2FnZToKICogYGBganMKICogY29uc3QgbXlGdW5jdGlvblJlZmVyZW5jZSA9IGFwaS5teU1vZHVsZS5teUZ1bmN0aW9uOwogKiBgYGAKICovCmV4cG9ydCBkZWNsYXJlIGNvbnN0IGFwaTogRmlsdGVyQXBpPAogIHR5cGVvZiBmdWxsQXBpLAogIEZ1bmN0aW9uUmVmZXJlbmNlPGFueSwgInB1YmxpYyI+Cj47CgovKioKICogQSB1dGlsaXR5IGZvciByZWZlcmVuY2luZyBDb252ZXggZnVuY3Rpb25zIGluIHlvdXIgYXBwJ3MgaW50ZXJuYWwgQVBJLgogKgogKiBVc2FnZToKICogYGBganMKICogY29uc3QgbXlGdW5jdGlvblJlZmVyZW5jZSA9IGludGVybmFsLm15TW9kdWxlLm15RnVuY3Rpb247CiAqIGBgYAogKi8KZXhwb3J0IGRlY2xhcmUgY29uc3QgaW50ZXJuYWw6IEZpbHRlckFwaTwKICB0eXBlb2YgZnVsbEFwaSwKICBGdW5jdGlvblJlZmVyZW5jZTxhbnksICJpbnRlcm5hbCI+Cj47CgpleHBvcnQgZGVjbGFyZSBjb25zdCBjb21wb25lbnRzOiB7CiAgYmV0dGVyQXV0aDogaW1wb3J0KCJAY29udmV4LWRldi9iZXR0ZXItYXV0aC9fZ2VuZXJhdGVkL2NvbXBvbmVudC5qcyIpLkNvbXBvbmVudEFwaTwiYmV0dGVyQXV0aCI+OwogIHB1c2hOb3RpZmljYXRpb25zOiBpbXBvcnQoIkBjb252ZXgtZGV2L2V4cG8tcHVzaC1ub3RpZmljYXRpb25zL19nZW5lcmF0ZWQvY29tcG9uZW50LmpzIikuQ29tcG9uZW50QXBpPCJwdXNoTm90aWZpY2F0aW9ucyI+OwogIHJhdGVMaW1pdGVyOiBpbXBvcnQoIkBjb252ZXgtZGV2L3JhdGUtbGltaXRlci9fZ2VuZXJhdGVkL2NvbXBvbmVudC5qcyIpLkNvbXBvbmVudEFwaTwicmF0ZUxpbWl0ZXIiPjsKfTsK
+/* eslint-disable */
+/**
+ * Generated `api` utility.
+ *
+ * THIS CODE IS AUTOMATICALLY GENERATED.
+ *
+ * To regenerate, run `npx convex dev`.
+ * @module
+ */
+
+import type * as _lib_audit from "../_lib/audit.js";
+import type * as _lib_auth from "../_lib/auth.js";
+import type * as _lib_db from "../_lib/db.js";
+import type * as _lib_donorLive from "../_lib/donorLive.js";
+import type * as _lib_errors from "../_lib/errors.js";
+import type * as _lib_events from "../_lib/events.js";
+import type * as _lib_notify from "../_lib/notify.js";
+import type * as _lib_practice from "../_lib/practice.js";
+import type * as _lib_ratelimit from "../_lib/ratelimit.js";
+import type * as _lib_settings from "../_lib/settings.js";
+import type * as _lib_settingsData from "../_lib/settingsData.js";
+import type * as _lib_visibility from "../_lib/visibility.js";
+import type * as _lib_webPushCrypto from "../_lib/webPushCrypto.js";
+import type * as admin_ai from "../admin/ai.js";
+import type * as admin_audit from "../admin/audit.js";
+import type * as admin_bootstrap from "../admin/bootstrap.js";
+import type * as admin_data from "../admin/data.js";
+import type * as admin_demo from "../admin/demo.js";
+import type * as admin_directory from "../admin/directory.js";
+import type * as admin_faq from "../admin/faq.js";
+import type * as admin_moderation from "../admin/moderation.js";
+import type * as admin_ops from "../admin/ops.js";
+import type * as admin_people from "../admin/people.js";
+import type * as admin_settings from "../admin/settings.js";
+import type * as admin_summary from "../admin/summary.js";
+import type * as admin_usage from "../admin/usage.js";
+import type * as ai_gemini from "../ai/gemini.js";
+import type * as assistant from "../assistant.js";
+import type * as auth from "../auth.js";
+import type * as blocks from "../blocks.js";
+import type * as campaigns from "../campaigns.js";
+import type * as consents from "../consents.js";
+import type * as crons from "../crons.js";
+import type * as donors from "../donors.js";
+import type * as hospitals from "../hospitals.js";
+import type * as http from "../http.js";
+import type * as intake from "../intake.js";
+import type * as lifecycle from "../lifecycle.js";
+import type * as matching from "../matching.js";
+import type * as notifications from "../notifications.js";
+import type * as phoneVerification from "../phoneVerification.js";
+import type * as places from "../places.js";
+import type * as profiles from "../profiles.js";
+import type * as public_ from "../public.js";
+import type * as push from "../push.js";
+import type * as pushWeb from "../pushWeb.js";
+import type * as reminders from "../reminders.js";
+import type * as reports from "../reports.js";
+import type * as requests from "../requests.js";
+import type * as responses from "../responses.js";
+import type * as retention from "../retention.js";
+import type * as rules_alertPolicy from "../rules/alertPolicy.js";
+import type * as rules_appeal from "../rules/appeal.js";
+import type * as rules_compatibility from "../rules/compatibility.js";
+import type * as rules_csv from "../rules/csv.js";
+import type * as rules_duplicates from "../rules/duplicates.js";
+import type * as rules_eligibility from "../rules/eligibility.js";
+import type * as rules_faqMatch from "../rules/faqMatch.js";
+import type * as rules_intakeParser from "../rules/intakeParser.js";
+import type * as rules_limits from "../rules/limits.js";
+import type * as rules_moderation from "../rules/moderation.js";
+import type * as rules_ranking from "../rules/ranking.js";
+import type * as rules_redaction from "../rules/redaction.js";
+import type * as rules_stats from "../rules/stats.js";
+import type * as rules_validation from "../rules/validation.js";
+import type * as rules_waves from "../rules/waves.js";
+import type * as schemaTypes from "../schemaTypes.js";
+import type * as seed from "../seed.js";
+import type * as share from "../share.js";
+import type * as slips from "../slips.js";
+import type * as stats from "../stats.js";
+import type * as support from "../support.js";
+import type * as telegramAdmin from "../telegramAdmin.js";
+import type * as volunteers from "../volunteers.js";
+
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
+
+declare const fullApi: ApiFromModules<{
+  "_lib/audit": typeof _lib_audit;
+  "_lib/auth": typeof _lib_auth;
+  "_lib/db": typeof _lib_db;
+  "_lib/donorLive": typeof _lib_donorLive;
+  "_lib/errors": typeof _lib_errors;
+  "_lib/events": typeof _lib_events;
+  "_lib/notify": typeof _lib_notify;
+  "_lib/practice": typeof _lib_practice;
+  "_lib/ratelimit": typeof _lib_ratelimit;
+  "_lib/settings": typeof _lib_settings;
+  "_lib/settingsData": typeof _lib_settingsData;
+  "_lib/visibility": typeof _lib_visibility;
+  "_lib/webPushCrypto": typeof _lib_webPushCrypto;
+  "admin/ai": typeof admin_ai;
+  "admin/audit": typeof admin_audit;
+  "admin/bootstrap": typeof admin_bootstrap;
+  "admin/data": typeof admin_data;
+  "admin/demo": typeof admin_demo;
+  "admin/directory": typeof admin_directory;
+  "admin/faq": typeof admin_faq;
+  "admin/moderation": typeof admin_moderation;
+  "admin/ops": typeof admin_ops;
+  "admin/people": typeof admin_people;
+  "admin/settings": typeof admin_settings;
+  "admin/summary": typeof admin_summary;
+  "admin/usage": typeof admin_usage;
+  "ai/gemini": typeof ai_gemini;
+  assistant: typeof assistant;
+  auth: typeof auth;
+  blocks: typeof blocks;
+  campaigns: typeof campaigns;
+  consents: typeof consents;
+  crons: typeof crons;
+  donors: typeof donors;
+  hospitals: typeof hospitals;
+  http: typeof http;
+  intake: typeof intake;
+  lifecycle: typeof lifecycle;
+  matching: typeof matching;
+  notifications: typeof notifications;
+  phoneVerification: typeof phoneVerification;
+  places: typeof places;
+  profiles: typeof profiles;
+  public: typeof public_;
+  push: typeof push;
+  pushWeb: typeof pushWeb;
+  reminders: typeof reminders;
+  reports: typeof reports;
+  requests: typeof requests;
+  responses: typeof responses;
+  retention: typeof retention;
+  "rules/alertPolicy": typeof rules_alertPolicy;
+  "rules/appeal": typeof rules_appeal;
+  "rules/compatibility": typeof rules_compatibility;
+  "rules/csv": typeof rules_csv;
+  "rules/duplicates": typeof rules_duplicates;
+  "rules/eligibility": typeof rules_eligibility;
+  "rules/faqMatch": typeof rules_faqMatch;
+  "rules/intakeParser": typeof rules_intakeParser;
+  "rules/limits": typeof rules_limits;
+  "rules/moderation": typeof rules_moderation;
+  "rules/ranking": typeof rules_ranking;
+  "rules/redaction": typeof rules_redaction;
+  "rules/stats": typeof rules_stats;
+  "rules/validation": typeof rules_validation;
+  "rules/waves": typeof rules_waves;
+  schemaTypes: typeof schemaTypes;
+  seed: typeof seed;
+  share: typeof share;
+  slips: typeof slips;
+  stats: typeof stats;
+  support: typeof support;
+  telegramAdmin: typeof telegramAdmin;
+  volunteers: typeof volunteers;
+}>;
+
+/**
+ * A utility for referencing Convex functions in your app's public API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
+ */
+export declare const api: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "public">
+>;
+
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
+export declare const internal: FilterApi<
+  typeof fullApi,
+  FunctionReference<any, "internal">
+>;
+
+export declare const components: {
+  betterAuth: import("@convex-dev/better-auth/_generated/component.js").ComponentApi<"betterAuth">;
+  pushNotifications: import("@convex-dev/expo-push-notifications/_generated/component.js").ComponentApi<"pushNotifications">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};
