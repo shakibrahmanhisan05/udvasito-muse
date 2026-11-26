@@ -6,8 +6,9 @@ request — by form, by Bangla voice, or by pasting a post — deterministic rul
 (not AI) match it to compatible, eligible, nearby donors and notify them in
 waves, and a donor's phone number is shared **only after that donor agrees**.
 
-One Expo codebase serves the Android app and the web app/PWA
-(`udvasito.vercel.app`); the backend is Convex. Built by Team T37 (University
+One Expo codebase serves the Android app and the web app/PWA — **live at
+[udvasito-seven.vercel.app](https://udvasito-seven.vercel.app)**; the backend
+is Convex. Built by Team T37 (University
 of Chittagong) for the "AI Battle" build phase. Hard budget: **৳0/month** —
 free tiers only, no credit card on any account.
 
@@ -60,7 +61,7 @@ Sentry · Vitest + convex-test + Playwright · Vercel Hobby · EAS Build/Update.
 
 ## Branches & environments
 
-`main` → production (`udvasito-prod`, `udvasito.vercel.app`, EAS channel
+`main` → production (`udvasito-prod`, `udvasito-seven.vercel.app`, EAS channel
 `production`). `staging` → staging (`udvasito-staging`, Vercel staging,
 channel `preview`). Feature branches → Vercel previews against staging.
 
