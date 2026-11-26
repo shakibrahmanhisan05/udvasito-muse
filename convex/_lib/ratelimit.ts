@@ -38,9 +38,13 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   helplineFetch: { kind: "fixed window", rate: 30, period: HOUR },
   // specs §6.4: push.sendTest — 3 per hour.
   pushTest: { kind: "fixed window", rate: 3, period: HOUR },
+  // specs §6.4: reports.create — 10 per member per day.
+  reportCreate: { kind: "fixed window", rate: 10, period: DAY },
 });
 
-type LimitName = "signUp" | "verificationStart" | "inPersonConfirm" | "helplineFetch" | "pushTest";
+type LimitName =
+  | "signUp" | "verificationStart" | "inPersonConfirm" | "helplineFetch" | "pushTest"
+  | "reportCreate";
 
 /** Consume one token or throw ERR_RATE_LIMITED with whole minutes to wait. */
 export async function limitOrThrow(

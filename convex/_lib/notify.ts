@@ -61,6 +61,44 @@ const TEMPLATES: Record<string, Record<Lang, Template>> = {
     en: { title: "A volunteer can help you now", body: "Open UDVASITO to call them." },
     bn: { title: "একজন স্বেচ্ছাসেবক এখন সাহায্য করতে পারেন", body: "কল করতে উদ্ভাসিত খুলুন।" },
   },
+  "NTF-07": {
+    en: {
+      title: "No donor yet: {{group}} at {{hospital}}",
+      body: "Waiting {{min}} min. Can you help?",
+    },
+    bn: {
+      title: "এখনো রক্তদাতা নেই: {{hospital}}-এ {{group}}",
+      body: "{{min}} মিনিট ধরে অপেক্ষায়। সাহায্য করতে পারবেন?",
+    },
+  },
+  "NTF-08": {
+    en: {
+      title: "Still coming to {{hospital}}?",
+      body: "Tap to answer — the family is waiting.",
+    },
+    bn: {
+      title: "আপনি কি {{hospital}}-এ আসছেন?",
+      body: "উত্তর দিতে ট্যাপ করুন — পরিবারটি অপেক্ষা করছে।",
+    },
+  },
+  "NTF-10": {
+    en: {
+      title: "Did the donation happen?",
+      body: "One tap helps us count real donations.",
+    },
+    bn: {
+      title: "রক্তদান কি হয়েছে?",
+      body: "এক ট্যাপে আমরা আসল রক্তদান গুনতে পারি।",
+    },
+  },
+  "NTF-13": {
+    en: { title: "Your pause has ended", body: "You'll receive requests again." },
+    bn: { title: "আপনার বিরতি শেষ", body: "আবার অনুরোধ পাবেন।" },
+  },
+  "NTF-17": {
+    en: { title: "New item to review", body: "{{kind}}" },
+    bn: { title: "পর্যালোচনার জন্য নতুন বিষয়", body: "{{kind}}" },
+  },
   "NTF-09": {
     en: {
       title: "No longer needed — thank you",

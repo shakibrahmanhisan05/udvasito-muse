@@ -55,6 +55,7 @@ export type RulesSettings = {
   openRequestsVerified: number;
   requestsPerMonth: number;
   volunteerRequestsPerMonth: number;
+  noShowPenalty: { count: number; days: number };
 };
 
 export const RULES_SETTING_KEYS: (keyof RulesSettings)[] = [
@@ -62,7 +63,7 @@ export const RULES_SETTING_KEYS: (keyof RulesSettings)[] = [
   "intervalPlateletDays", "intervalPlateletToWholeDays", "waveSizes",
   "waveIntervalMin", "waveCount", "compatibleInFinalWave", "donorAlertCapPerDay",
   "quietHours", "openRequestsUnverified", "openRequestsVerified",
-  "requestsPerMonth", "volunteerRequestsPerMonth",
+  "requestsPerMonth", "volunteerRequestsPerMonth", "noShowPenalty",
 ];
 
 export async function getRulesSettings(ctx: Ctx): Promise<RulesSettings> {

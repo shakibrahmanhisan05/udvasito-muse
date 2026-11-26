@@ -2,6 +2,9 @@ import type { GenericMutationCtx } from "convex/server";
 import type { DataModel, Doc, Id } from "../schemaTypes";
 import { writeAudit } from "./audit";
 import { fail } from "./errors";
+import { eqRange } from "./db";
+import { getSetting } from "./settings";
+import { startOfDhakaDay } from "../rules/alertPolicy";
 
 type Profile = Doc<"profiles">;
 
@@ -66,5 +69,30 @@ export async function recordContactReveal(
     targetId: args.subject._id,
     reason: args.reasonText ?? args.reason,
   });
+  // Reveal-volume flag (S-24, F-802): staff-side reveals (admin /
+  // volunteer) past the daily threshold raise a moderation flag, once,
+  // at the crossing. Ordinary confirmed-slot reveals are not staff-side.
+  if (
+    args.reason === "admin_reveal" ||
+    args.reason === "volunteer_optin_call" ||
+    args.reason === "volunteer_case"
+  ) {
+    const threshold = await getSetting<number>(ctx, "revealFlagPerDay");
+    const mine = await ctx.db
+      .query("contactReveals")
+      .withIndex("by_viewer_request", eqRange([["viewerId", args.viewer._id]]))
+      .collect();
+    const today = mine.filter((r) => r._creationTime >= startOfDhakaDay(Date.now())).length;
+    if (today === threshold + 1) {
+      await ctx.db.insert("moderationItems", {
+        type: "flag",
+        kind: "reveal_volume",
+        subjectId: args.viewer._id,
+        severity: "medium",
+        status: "open",
+        isDemo: args.isDemo,
+      });
+    }
+  }
   return args.subject.phone;
 }
