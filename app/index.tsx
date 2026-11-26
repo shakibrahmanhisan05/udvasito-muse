@@ -17,7 +17,8 @@ import { refs } from "@/lib/refs";
  *
  * Web: the public landing page — static shell (hero renders without
  * any JS data), live-impact numbers loaded afterwards from
- * GET /public/stats (specs §6.5, practice area excluded server-side).
+ * GET /public/stats (specs §6.5, practice area excluded server-side)
+ * and rendered only behind features.impactNumbers (F-1001).
  * Native: no UI — redirect (/home if consent is current, else
  * /welcome), exactly as specs §3.7 prescribes.
  *
@@ -28,7 +29,7 @@ import { refs } from "@/lib/refs";
  * (specs §3.7 layout wording verbatim where specs give it), pending
  * member 3's key review; the Responsible-AI bullets are PRD §6.4
  * commitments 1–3 verbatim. The dengue strip (layout item 5) links to
- * the P7 learn pages and stays hidden until they exist (§1.9).
+ * the P7 learn pages and renders only behind features.learnPages.
  */
 const DOWNLOAD_APP = "Download app";
 const SIGN_IN = "Sign in";
@@ -46,6 +47,8 @@ const AI_BULLETS = [
   "Code removes phone numbers, names and diagnoses before any AI call; users are told on the consent screen.",
 ];
 const ABOUT_LINK = "About UDVASITO";
+const LEARN_LINK = "Learn";
+const DENGUE_LINK = "Dengue & platelets";
 const FOOTER_PRIVACY = "Privacy";
 const FOOTER_TERMS = "Terms";
 const FOOTER_ABOUT = "About";
@@ -61,13 +64,13 @@ type PublicStats = {
 
 const GROUP_ORDER = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-function usePublicStats() {
+function usePublicStats(enabled: boolean) {
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [failed, setFailed] = useState(
     () => Platform.OS !== "web" || !convexSiteUrl,
   );
   useEffect(() => {
-    if (Platform.OS !== "web" || !convexSiteUrl) return;
+    if (!enabled || Platform.OS !== "web" || !convexSiteUrl) return;
     let cancelled = false;
     fetch(`${convexSiteUrl}/public/stats`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("stats"))))
@@ -80,14 +83,20 @@ function usePublicStats() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
   return { stats, failed };
 }
 
 function Landing() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { stats, failed } = usePublicStats();
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
+  // F-1001: live impact numbers render only behind their switch.
+  const impactOn = appConfig?.features?.impactNumbers === true;
+  // F-1003/F-1004: the dengue strip + learn footer links exist only
+  // while the learn pages do (features.learnPages).
+  const learnOn = appConfig?.features?.learnPages === true;
+  const { stats, failed } = usePublicStats(impactOn);
   const appConfigMissing = !convexSiteUrl;
 
   return (
@@ -105,14 +114,16 @@ function Landing() {
         </View>
         <View style={styles.headerActions}>
           <LanguageToggle />
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={DOWNLOAD_APP}
-            onPress={() => router.push("/download")}
-            style={styles.headerLink}
-          >
-            <Text style={styles.headerLinkText}>{DOWNLOAD_APP}</Text>
-          </Pressable>
+          {appConfig?.features?.installPrompts === true ? (
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={DOWNLOAD_APP}
+              onPress={() => router.push("/download")}
+              style={styles.headerLink}
+            >
+              <Text style={styles.headerLinkText}>{DOWNLOAD_APP}</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={SIGN_IN}
@@ -156,6 +167,7 @@ function Landing() {
         )}
       </View>
 
+      {impactOn ? (
       <View style={styles.card}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>
           {LIVE_IMPACT}
@@ -191,6 +203,19 @@ function Landing() {
           </Text>
         )}
       </View>
+      ) : null}
+
+      {learnOn ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("home.dengueCta")}
+          onPress={() => router.push("/learn/dengue")}
+          style={styles.card}
+        >
+          <Text style={styles.sectionTitle}>{t("home.dengueCta")}</Text>
+          <Text style={styles.body}>{DENGUE_LINK}</Text>
+        </Pressable>
+      ) : null}
 
       <View style={styles.card}>
         <Text accessibilityRole="header" style={styles.sectionTitle}>
@@ -215,6 +240,26 @@ function Landing() {
       <View style={styles.footer}>
         <Text style={styles.help}>{t("common.notBloodBank")}</Text>
         <View style={styles.footerLinks}>
+          {learnOn ? (
+            <>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={LEARN_LINK}
+                onPress={() => router.push("/learn")}
+                style={styles.textLink}
+              >
+                <Text style={styles.linkText}>{LEARN_LINK}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={DENGUE_LINK}
+                onPress={() => router.push("/learn/dengue")}
+                style={styles.textLink}
+              >
+                <Text style={styles.linkText}>{DENGUE_LINK}</Text>
+              </Pressable>
+            </>
+          ) : null}
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={FOOTER_PRIVACY}

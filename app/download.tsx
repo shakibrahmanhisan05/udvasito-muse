@@ -131,7 +131,7 @@ export default function Download() {
         <Text style={styles.body}>{IPHONE_NOTE}</Text>
       </View>
 
-      {installPrompt ? (
+      {installPrompt && appConfig?.features?.installPrompts === true ? (
         <View style={styles.card}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>
             {DESKTOP_TITLE}
