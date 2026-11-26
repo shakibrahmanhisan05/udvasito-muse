@@ -22,6 +22,8 @@ export type AppConfig = {
   apkSha256: string;
   verification: VerificationConfig;
   aiFeatures: Record<string, boolean>;
+  contactEmail: string;
+  medicalReviewer: { name: string; reviewedAt: number };
 };
 
 export const FALLBACK_APP_CONFIG: AppConfig = {
@@ -37,6 +39,8 @@ export const FALLBACK_APP_CONFIG: AppConfig = {
   // WhatsApp off, no bot username until the admin sets it (RB-5).
   verification: { telegram: true, whatsapp: false, inPerson: true, telegramBot: "", whatsappNumber: "" },
   aiFeatures: {},
+  contactEmail: "",
+  medicalReviewer: { name: "", reviewedAt: 0 },
 };
 
 /** Semver-ish compare for gate G1: is `current` older than `minimum`? */
