@@ -1,5 +1,6 @@
 import type { GenericMutationCtx } from "convex/server";
 import { PushNotifications } from "@convex-dev/expo-push-notifications";
+import { makeFunctionReference } from "convex/server";
 import { components } from "../_generated/api";
 import type { DataModel, Doc, Id } from "../schemaTypes";
 import { recordEvent } from "./events";
@@ -193,6 +194,8 @@ export function formatTimeDhaka(ms: number): string {
 
 const push = new PushNotifications<string>(components.pushNotifications);
 
+const sendWebPushRef = makeFunctionReference<"action">("pushWeb:sendToProfile");
+
 export async function notifyUser(
   ctx: GenericMutationCtx<DataModel>,
   args: {
@@ -220,6 +223,7 @@ export async function notifyUser(
   });
   let status: "sent" | "failed" = "failed";
   let failure: string | undefined;
+  let rendered: { title: string; body: string } | null = null;
   if (!tpl) {
     failure = "unknown_template";
   } else {
@@ -231,6 +235,7 @@ export async function notifyUser(
       args.variant === "rejected" && tpl.rejected ? tpl.rejected : tpl;
     const title = render(wording.title, params);
     const body = render(args.donorCallsBody && tpl.bodyDonorCalls ? tpl.bodyDonorCalls : wording.body, params);
+    rendered = { title, body };
     try {
       const pushId = await push.sendPushNotification(ctx, {
         userId: args.recipient.authUserId,
@@ -249,6 +254,24 @@ export async function notifyUser(
     }
   }
   await ctx.db.patch(notificationId, { status, failure });
+  // Web Push fan-out (F-303): the same rendered, privacy-safe wording
+  // goes to the recipient's browser subscriptions via the Node sender.
+  // The notification row above stays the single inbox record.
+  if (rendered) {
+    const webSubs = await ctx.db
+      .query("webPushSubscriptions")
+      .withIndex("by_profile", (q) => q.eq("profileId", args.recipient._id))
+      .collect();
+    if (webSubs.length > 0) {
+      await ctx.scheduler.runAfter(0, sendWebPushRef, {
+        profileId: args.recipient._id,
+        title: rendered.title,
+        body: rendered.body,
+        url: args.url,
+        tag: String(notificationId),
+      });
+    }
+  }
   await recordEvent(ctx, "notification_sent", {
     requestId: args.requestId,
     actorRole: "system",
