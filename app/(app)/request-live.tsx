@@ -11,6 +11,9 @@ import { errorText } from "@/lib/errors";
 import { directionsUrl, formatTimeDhaka } from "@/lib/geo";
 import type { Id } from "@/convex/_generated/dataModel";
 
+/** F-209 slip-pending line — unkeyed in specs §4 (P7 gap list). */
+const SLIP_PENDING = "Slip sent — a volunteer will check it.";
+
 /**
  * SCR-M03 — Request live status (Convex real-time). Shows progress, the
  * confirmed donors' numbers ONLY as returned by requests.getForOwner (the
@@ -26,8 +29,12 @@ export default function RequestLive() {
     refs.requestsGetForOwner,
     isAuthConfigured && params.id ? { requestId: params.id as Id<"requests"> } : "skip",
   );
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
   const router = useRouter();
   const close = useMutation(refs.requestsClose);
+  const genSlipUrl = useMutation(refs.requestsGenerateSlipUploadUrl);
+  const attachSlip = useMutation(refs.requestsAttachSlip);
+  const [slipBusy, setSlipBusy] = useState(false);
   const markNotResponding = useMutation(refs.requestsMarkDonorNotResponding);
   const updateRequest = useMutation(refs.requestsUpdate);
   const reopenRequest = useMutation(refs.requestsReopen);
@@ -63,6 +70,55 @@ export default function RequestLive() {
     })();
   };
 
+  // F-209: attach a hospital slip photo (VAL-12 resize on-device;
+  // the file goes to private Convex storage via a one-time URL).
+  const attachSlipPhoto = () => {
+    setSlipBusy(true);
+    void (async () => {
+      try {
+        const ImagePicker = await import("expo-image-picker");
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) return;
+        const picked = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          quality: 1,
+        });
+        if (picked.canceled || !picked.assets[0]) return;
+        let uri = picked.assets[0].uri;
+        let mime = picked.assets[0].mimeType ?? "image/jpeg";
+        try {
+          const Manipulator = await import("expo-image-manipulator");
+          const out = await Manipulator.manipulateAsync(
+            uri,
+            [{ resize: { width: 1600 } }],
+            { compress: 0.7, format: Manipulator.SaveFormat.JPEG },
+          );
+          uri = out.uri;
+          mime = "image/jpeg";
+        } catch {
+          // Keep the original photo if resizing is unavailable.
+        }
+        const { uploadUrl } = await genSlipUrl({ requestId: request._id });
+        const blob = await (await fetch(uri)).blob();
+        const up = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": mime },
+          body: blob,
+        });
+        if (!up.ok) throw new Error("upload failed");
+        const { storageId } = (await up.json()) as { storageId: string };
+        await attachSlip({
+          requestId: request._id,
+          storageId: storageId as Id<"_storage">,
+        });
+      } catch (e) {
+        setError(errorText(t, e));
+      } finally {
+        setSlipBusy(false);
+      }
+    })();
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -76,6 +132,9 @@ export default function RequestLive() {
       <Text style={styles.body}>
         {request.hospitalName ?? request.placeText ?? ""} • {formatTimeDhaka(request.neededBy, lang)}
       </Text>
+      {request.createdByVolunteerId ? (
+        <Text style={styles.body}>{t("volunteerPost.label")}</Text>
+      ) : null}
       {error ? <Banner kind="error" icon="⚠" text={error} /> : null}
       {anyPhoneShown ? <SafetyCard /> : null}
 
@@ -190,6 +249,36 @@ export default function RequestLive() {
             }
           />
           <Button label={t("request.markFulfilled")} onPress={() => setConfirmClose("fulfilled")} />
+          {appConfig?.features?.sharedLinks === true ? (
+            <Button
+              label={t("request.share")}
+              variant="secondary"
+              onPress={() =>
+                router.push({ pathname: "/(app)/request-share", params: { id: request._id } })
+              }
+            />
+          ) : null}
+          {appConfig?.features?.slips === true ? (
+            <>
+              {request.slipStatus === "approved" ? (
+                <Text style={styles.body}>{t("alert.verified")}</Text>
+              ) : null}
+              {request.slipStatus === "pending" ? (
+                <Text style={styles.body}>{SLIP_PENDING}</Text>
+              ) : null}
+              {request.slipStatus === "rejected" && request.slipReviewReason ? (
+                <Text style={styles.body}>{request.slipReviewReason}</Text>
+              ) : null}
+              {request.slipStatus !== "pending" && request.slipStatus !== "approved" ? (
+                <Button
+                  label={t("request.slip")}
+                  variant="secondary"
+                  loading={slipBusy}
+                  onPress={attachSlipPhoto}
+                />
+              ) : null}
+            </>
+          ) : null}
           <Button
             label={t("request.notNeeded")}
             variant="danger"

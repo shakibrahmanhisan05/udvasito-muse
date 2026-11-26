@@ -16,12 +16,21 @@ import { refs } from "@/lib/refs";
 const MODERATION_QUEUE = "Moderation queue";
 const AUDIT_LOG = "Audit log";
 const ABOUT = "About UDVASITO";
+const CAMPAIGNS = "Campus campaigns";
+// P7 admin batch (F-906/F-907/F-905/F-908) — unkeyed, P7 gap list.
+const DIRECTORY = "Hospital directory";
+const FAQ_ADMIN = "FAQ management";
+const DATA_ADMIN = "Import / export";
+const SUMMARY_ADMIN = "Weekly summary";
+const LEARN_ABOUT = "Learn about donating";
+const DENGUE_PAGE = "Dengue & platelets";
 
 export default function More() {
   const { t } = useTranslation();
   const router = useRouter();
   const session = authClient.useSession();
   const me = useQuery(refs.me, isAuthConfigured ? {} : "skip");
+  const appConfig = useQuery(refs.appConfig, isAuthConfigured ? {} : "skip");
   const canVerify =
     me?.role === "volunteer" || me?.role === "admin" || me?.role === "superadmin";
 
@@ -41,6 +50,27 @@ export default function More() {
           variant="secondary"
           onPress={() => router.push("/(app)/donor")}
         />
+        {appConfig?.features?.learnPages === true ? (
+          <>
+            <Button
+              label={LEARN_ABOUT}
+              variant="secondary"
+              onPress={() => router.push("/learn")}
+            />
+            <Button
+              label={DENGUE_PAGE}
+              variant="secondary"
+              onPress={() => router.push("/learn/dengue")}
+            />
+          </>
+        ) : null}
+        {appConfig?.features?.assistant === true ? (
+          <Button
+            label={t("assistant.title")}
+            variant="secondary"
+            onPress={() => router.push("/(app)/assistant")}
+          />
+        ) : null}
         {canVerify ? (
           <Button
             label={t("verifyInPerson.title")}
@@ -90,13 +120,50 @@ export default function More() {
               variant="secondary"
               onPress={() => router.push("/(app)/admin-settings")}
             />
+            {appConfig?.features?.campaignStats === true ? (
+              <Button
+                label={CAMPAIGNS}
+                variant="secondary"
+                onPress={() => router.push("/(app)/campaigns")}
+              />
+            ) : null}
+            {appConfig?.features?.directoryUi === true ? (
+              <Button
+                label={DIRECTORY}
+                variant="secondary"
+                onPress={() => router.push("/(app)/admin-directory")}
+              />
+            ) : null}
+            {appConfig?.features?.faqUi === true ? (
+              <Button
+                label={FAQ_ADMIN}
+                variant="secondary"
+                onPress={() => router.push("/(app)/admin-faq")}
+              />
+            ) : null}
+            {appConfig?.features?.dataImportExport === true ? (
+              <Button
+                label={DATA_ADMIN}
+                variant="secondary"
+                onPress={() => router.push("/(app)/admin-data")}
+              />
+            ) : null}
+            {appConfig?.features?.weeklySummary === true ? (
+              <Button
+                label={SUMMARY_ADMIN}
+                variant="secondary"
+                onPress={() => router.push("/(app)/admin-summary")}
+              />
+            ) : null}
           </>
         ) : null}
-        <Button
-          label={t("update.download")}
-          variant="secondary"
-          onPress={() => router.push("/download")}
-        />
+        {appConfig?.features?.installPrompts === true ? (
+          <Button
+            label={t("update.download")}
+            variant="secondary"
+            onPress={() => router.push("/download")}
+          />
+        ) : null}
         <Button
           label={ABOUT}
           variant="secondary"

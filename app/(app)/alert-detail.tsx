@@ -123,6 +123,9 @@ export default function AlertDetail() {
           })}
         </Text>
       ) : null}
+      {data.request.verifiedBadge ? (
+        <Text style={styles.help}>{t("alert.verified")}</Text>
+      ) : null}
       {error ? <Banner kind="error" icon="⚠" text={error} /> : null}
 
       {state === "confirmed" ? (
