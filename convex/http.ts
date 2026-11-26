@@ -11,6 +11,8 @@ import { authComponent, createAuth } from "./auth";
  *   app-side status query reflects the result (honest degraded state).
  * - GET /public/helpline (specs §6.5, D-R3): the helpline number, fetched
  *   on tap only; rate-limited 30/hour/network; never cached.
+ * - GET /public/stats (specs §6.5): anonymised live-impact aggregates
+ *   for the landing page (P7); practice excluded; cached 5 minutes.
  * - GET /health (specs §6.5): uptime checks.
  */
 const http = httpRouter();
@@ -21,6 +23,8 @@ const handleTelegramUpdate = makeFunctionReference<"mutation">(
   "phoneVerification:handleTelegramUpdate",
 );
 const helplineFetch = makeFunctionReference<"mutation">("support:helplineFetch");
+const getPublicSnapshot = makeFunctionReference<"query">("stats:getPublicSnapshot");
+const computeSnapshots = makeFunctionReference<"mutation">("stats:computeSnapshots");
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -116,6 +120,42 @@ http.route({
       }
       throw e;
     }
+  }),
+});
+
+http.route({
+  path: "/public/stats",
+  method: "GET",
+  handler: httpActionGeneric(async (ctx) => {
+    // Anonymised aggregates only (donorsByGroup/donorsLive/
+    // requestsHelped/donationsConfirmed) — no row-level data exists
+    // in the snapshot, and practice rows never enter it (stats.ts).
+    let snapshot = (await ctx.runQuery(getPublicSnapshot, {})) as {
+      data: {
+        donorsByGroup: Record<string, number>;
+        donorsLive: number;
+        requestsHelped: number;
+        donationsConfirmed: number;
+        updatedAt: number;
+      };
+    } | null;
+    if (!snapshot) {
+      // First hit before the cron's first run: compute once, re-read.
+      await ctx.runMutation(computeSnapshots, {});
+      snapshot = (await ctx.runQuery(getPublicSnapshot, {})) as typeof snapshot;
+    }
+    if (!snapshot) {
+      return Response.json(
+        { error: "not_ready" },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    const { donorsByGroup, donorsLive, requestsHelped, donationsConfirmed, updatedAt } =
+      snapshot.data;
+    return Response.json(
+      { donorsByGroup, donorsLive, requestsHelped, donationsConfirmed, updatedAt },
+      { status: 200, headers: { "Cache-Control": "public, max-age=300" } },
+    );
   }),
 });
 
