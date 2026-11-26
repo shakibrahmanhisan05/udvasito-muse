@@ -39,4 +39,18 @@ export const refs = {
   pushRegisterExpoToken: makeFunctionReference<"mutation">("push:registerExpoToken"),
   pushUnregister: makeFunctionReference<"mutation">("push:unregister"),
   pushSendTest: makeFunctionReference<"mutation">("push:sendTest"),
+  donorsSetAvailability: makeFunctionReference<"mutation">("donors:setAvailability"),
+  donorsConfirmStillAvailable: makeFunctionReference<"mutation">("donors:confirmStillAvailable"),
+  requestsUpdate: makeFunctionReference<"mutation">("requests:update"),
+  requestsReopen: makeFunctionReference<"mutation">("requests:reopen"),
+  requestsMarkDonorNotResponding: makeFunctionReference<"mutation">(
+    "requests:markDonorNotResponding",
+  ),
+  responsesWithdraw: makeFunctionReference<"mutation">("responses:withdraw"),
+  responsesAnswerStillComing: makeFunctionReference<"mutation">("responses:answerStillComing"),
+  responsesRecordOutcome: makeFunctionReference<"mutation">("responses:recordOutcome"),
+  responsesGetConfirmations: makeFunctionReference<"query">("responses:getConfirmations"),
+  reportsCreate: makeFunctionReference<"mutation">("reports:create"),
+  blocksCreate: makeFunctionReference<"mutation">("blocks:create"),
+  blocksRemove: makeFunctionReference<"mutation">("blocks:remove"),
 };
