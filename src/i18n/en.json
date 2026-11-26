@@ -1,0 +1,695 @@
+{
+  "common": {
+    "appName": "UDVASITO",
+    "tagline": "Find blood donors when time matters",
+    "continue": "Continue",
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "done": "Done",
+    "edit": "Edit",
+    "change": "Change",
+    "retry": "Try again",
+    "getHelp": "Get help",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "copyNumber": "Copy number",
+    "copied": "Copied",
+    "lastUpdated": "Last updated {{time}}",
+    "offline": "You're offline. We'll send your changes when you're back online. ({{count}} waiting)",
+    "saving": "Saving…",
+    "sent": "Sent",
+    "waitingNetwork": "Waiting for network",
+    "aiSuggested": "AI suggested",
+    "demo": "PRACTICE",
+    "notMedicalAdvice": "This is general guidance, not medical advice. The blood bank decides.",
+    "notBloodBank": "UDVASITO connects people. It is not a blood bank or a medical service.",
+    "signOut": "Sign out",
+    "languageBn": "বাংলা",
+    "languageEn": "English"
+  },
+  "safety": {
+    "money": "UDVASITO never asks for money. Never send money to anyone for blood."
+  },
+  "errors": {
+    "generic": {
+      "title": "Something went wrong"
+    },
+    "ERR_UNAUTHENTICATED": "Please sign in again.",
+    "ERR_CONSENT_REQUIRED": "Please review and accept the updated terms to continue.",
+    "ERR_UNDERAGE": "You need to be 18 or older to use UDVASITO.",
+    "ERR_FORBIDDEN": "You don't have access to this page.",
+    "ERR_FROZEN": "Your account is paused for review. You can't do this right now.",
+    "ERR_NOT_FOUND": "We couldn't find this. It may have been removed.",
+    "ERR_VALIDATION": "Please check the highlighted fields.",
+    "ERR_RATE_LIMITED": "Too many tries. Please wait {{minutes}} min and try again.",
+    "ERR_OPEN_REQUEST_LIMIT": "You already have {{count}} open request(s). Close one or verify your number to open another.",
+    "ERR_MONTHLY_REQUEST_LIMIT": "You've reached this month's request limit. Please call the helpline: {{phone}}",
+    "ERR_PHONE_NOT_VERIFIED": "Please verify your mobile number first.",
+    "ERR_PHONE_IN_USE": "This number is already verified on another account. Contact us if this is your number.",
+    "ERR_VERIFICATION_EXPIRED": "The verification link expired. Please start again.",
+    "ERR_METHOD_DISABLED": "This verification method isn't available right now.",
+    "ERR_REQUEST_CLOSED": "This request is closed — no help is needed now. Thank you!",
+    "ERR_ALREADY_RESPONDED": "You've already answered this request.",
+    "ERR_NOT_ELIGIBLE": {
+      "message": "You can't donate for this request right now: {{reason}}.",
+      "reason": {
+        "cooldown": "you can donate again from {{date}}",
+        "group": "your blood group doesn't match",
+        "platelets": "you haven't opted in to platelet donation",
+        "age": "the donor age limit is {{min}}–{{max}}",
+        "notLive": "your donor profile isn't active yet"
+      }
+    },
+    "ERR_BLOCKED": "You can't respond to this request.",
+    "ERR_REVEALS_FROZEN": "Contact details are paused while we review a report.",
+    "ERR_LAST_ADMIN": "There must always be at least one admin.",
+    "ERR_DEMO_ISOLATION": "Practice and real data can't be mixed.",
+    "ERR_SELF_VERIFICATION": "You can't verify your own number.",
+    "ERR_APP_VERSION": "Please update the app.",
+    "ERR_INTERNAL": "Something went wrong on our side. Please try again."
+  },
+  "blood": {
+    "wholeBlood": "Whole blood",
+    "platelets": "Platelets",
+    "notSure": "Not sure",
+    "any": "Any group (replacement donor)"
+  },
+  "units_one": "{{count}} bag",
+  "units_other": "{{count}} bags",
+  "urgency": {
+    "now": "Now (urgent)",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "pick": "Pick date & time"
+  },
+  "welcome": {
+    "title": "Welcome to UDVASITO",
+    "chooseLanguage": "Choose your language",
+    "beforeStart": "Before you start",
+    "terms": "Terms of use",
+    "privacy": "Privacy notice — what we collect and why",
+    "ai": "How AI is used: when you type or paste a request, the text (with phone numbers, names and illnesses removed) may be processed by an AI service to fill the form. You always check it before posting. AI never decides who is contacted.",
+    "voice": "Voice: your phone's or browser's own speech service turns your voice into text (this may be Google's service). UDVASITO never receives your audio.",
+    "permissions": "Permissions we may ask for, only when you use the feature: Location — to find where blood is needed or your area (we never store your live location). Notifications — to alert donors and update you. Microphone — to speak a request. Camera/Photos — to attach a hospital slip.",
+    "consent": "I am 18 or older and I agree to the Terms and Privacy notice."
+  },
+  "signin": {
+    "title": "Sign in",
+    "body": "One tap with your Google account. You'll only do this once.",
+    "google": "Continue with Google",
+    "why": "We use your Google account only to sign you in. We never post anything.",
+    "helpline": "Need blood right now? Call the UDVASITO helpline",
+    "helplineCall": "Call {{phone}}",
+    "practice": "Practice sign-in (for judges and training)",
+    "practiceId": "Practice ID",
+    "practicePin": "6-digit PIN",
+    "practiceNote": "Practice requests reach only practice accounts — never real donors. Everything else works exactly like the real app.",
+    "practiceLocked": "Too many wrong PINs. Try again in 15 minutes.",
+    "error": "Sign-in didn't finish. Please try again.",
+    "notConfigured": "Sign-in is not available yet because the server is not connected. Please try again later."
+  },
+  "onboarding": {
+    "title": "About you",
+    "body": "Three quick details. You can change them later.",
+    "name": "Full name",
+    "dob": "Date of birth",
+    "dobHelp": "You must be 18 or older to use UDVASITO.",
+    "phone": "Mobile number",
+    "phoneHelp": "Shared only inside a blood request you take part in, and with on-duty volunteers when you ask for blood. Never shown publicly.",
+    "underage": {
+      "title": "Sorry, you need to be 18 or older",
+      "body": "Please ask an adult family member to post the request. In an emergency, call the helpline."
+    }
+  },
+  "verify": {
+    "title": "Verify your mobile number",
+    "body": "This keeps fake requests out. It takes about 30 seconds and costs nothing.",
+    "telegram": "Verify with Telegram",
+    "telegramSteps": "1. Tap the button — Telegram opens. 2. Tap Start, then \"Share my phone number\". 3. Come back here.",
+    "whatsapp": "Verify with WhatsApp",
+    "whatsappSteps": "1. Tap the button — WhatsApp opens with a message ready. 2. Tap Send. 3. Come back here.",
+    "inPerson": "Verify in person (at a campus drive or with a volunteer)",
+    "inPersonCode": "Your code: {{code}} (valid for 10 minutes)",
+    "inPersonSteps": "1. Show this code to an UDVASITO admin or volunteer. 2. When they ask, call their phone — they will reject the call, so it costs nothing. 3. They confirm, and your number is verified.",
+    "inPersonNotice": "When you call, the verifier's phone shows your number. They delete it from their call list afterwards.",
+    "waiting": "Waiting for confirmation…",
+    "success": "Your number {{phone}} is verified.",
+    "mismatch": "Telegram shared {{verified}}, which is different from {{entered}}. Use {{verified}} as your number?",
+    "useVerified": "Yes, use {{verified}}",
+    "expired": "The link expired. Tap the button again.",
+    "later": "Do this later",
+    "laterNote": "You can still post a request now. Until you verify, you can have 1 open request and donors will see \"phone not yet verified\"."
+  },
+  "update": {
+    "title": "Please update UDVASITO",
+    "body": "This version is too old to work safely. Download the latest version — it takes a minute.",
+    "download": "Download update",
+    "useWeb": "Use the web app"
+  },
+  "accountStatus": {
+    "frozen": {
+      "title": "Your account is paused for review",
+      "body": "We received a report and an admin will review it soon. You can still view your open request."
+    },
+    "suspended": {
+      "title": "Your account is suspended",
+      "body": "Reason: {{reason}}. Until {{date}}."
+    },
+    "banned": {
+      "title": "Your account is closed",
+      "body": "Reason: {{reason}}."
+    },
+    "deletion_pending": {
+      "title": "Your account is being deleted",
+      "body": "Your personal data will be removed by {{date}}. Changed your mind?"
+    }
+  },
+  "home": {
+    "needBlood": "Need blood?",
+    "needBloodCta": "Request blood now",
+    "dengueCta": "Dengue patient? Ask for platelets",
+    "verifyBanner": "Verify your number so donors trust your requests.",
+    "myRequest": "Your request",
+    "covered": "{{confirmed}} of {{needed}} bags arranged",
+    "requestsForMe": "Requests for you",
+    "requestsForMeCount_one": "{{count}} request waiting for your answer",
+    "requestsForMeCount_other": "{{count}} requests waiting for your answer",
+    "becomeDonor": "Become a donor — it takes 2 minutes",
+    "onDuty": "On duty",
+    "empty": "Nothing needs your attention right now.",
+    "title": "Home"
+  },
+  "request": {
+    "new": {
+      "title": "Request blood"
+    },
+    "quick": "Tell us quickly (optional)",
+    "speak": "Speak",
+    "write": "Write or paste",
+    "writeLabel": "Describe it in your own words, or paste a post",
+    "writePlaceholder": "e.g. \"2 bag B+ lagbe kal sokal CMCH e\"",
+    "aiNotice": "Please don't include names. Phone numbers, names and illnesses are removed before an AI service reads the text.",
+    "fillForm": "Fill the form for me",
+    "listening": "Listening… speak now",
+    "voiceUnavailable": "Voice isn't available on this device. Please write or use the form.",
+    "aiFilled": "We filled {{count}} fields. Please check them.",
+    "aiMissing": "We couldn't find: {{fields}}. Please fill these in.",
+    "aiUnavailable": "The AI helper isn't available right now. Your text is saved — please fill the form below.",
+    "details": "Request details",
+    "bloodGroup": "Blood group needed",
+    "whatNeeded": "What is needed",
+    "dengue": "Dengue patient",
+    "units": "How many bags",
+    "where": "Where is blood needed?",
+    "useLocation": "Use my current location",
+    "searchHospital": "Search hospital or area",
+    "dropPin": "Drop a pin on the map",
+    "nearestHospitals": "Hospitals near you",
+    "notInList": "My place isn't in the list",
+    "when": "When is it needed?",
+    "contact": "Contact number",
+    "contactHelp": "Only donors who agree to help will see this number.",
+    "more": "More details (optional)",
+    "patientName": "Patient's name",
+    "patientNameHelp": "Shown only to donors who are confirmed to help.",
+    "ward": "Ward / bed",
+    "note": "Note for donors",
+    "slip": "Attach hospital slip (gets a \"verified\" badge)",
+    "review": "Check and post",
+    "post": "Post request",
+    "posting": "Posting… donors will be alerted in seconds",
+    "duplicate": {
+      "title": "This may already be posted",
+      "body": "A {{group}} request at {{hospital}} was posted {{time}}. Is it the same patient?",
+      "join": "Yes, open that request",
+      "postAnyway": "No, post mine"
+    },
+    "notSureNote": "We'll alert volunteers, not donors. Please ask the ward or blood bank and update the group.",
+    "helpComing": "Help is on the way",
+    "donorNotResponding": "Donor not responding",
+    "donorNotRespondingConfirm": "We'll confirm the next donor and keep searching. {{name}} stays on your list in case they call.",
+    "volunteerIn": "A volunteer's number will appear in {{time}} if no donor answers",
+    "volunteerTitle": "A volunteer can help you now",
+    "fallbackTitle": "Call the UDVASITO helpline",
+    "progress": "{{notified}} donors alerted · {{opened}} saw it · {{accepted}} said yes",
+    "wave": "Search {{n}} of {{total}}",
+    "waveWider": "Searching a wider area",
+    "nextWaveIn": "Next search in {{time}}",
+    "noDonors": {
+      "title": "No matching donor is available yet",
+      "body": "We're telling you now so you don't lose time. Try these too:",
+      "step1": "Call the volunteer or helpline below",
+      "step2": "Share your request on Facebook and WhatsApp",
+      "step3": "Contact these blood banks"
+    },
+    "markFulfilled": "All bags arranged — close request",
+    "needMore": "Need more bags",
+    "notNeeded": "No longer needed",
+    "closeConfirm": "Close this request? Donors still deciding will be told it's no longer needed.",
+    "closed": {
+      "fulfilled": "Closed — all bags arranged. Thank you for using UDVASITO."
+    },
+    "reopen": "Reopen request",
+    "share": "Share request"
+  },
+  "requestStatus": {
+    "live": "Searching for donors",
+    "covered": "All bags arranged",
+    "closed": "Closed"
+  },
+  "contact": {
+    "donorWillCall": "{{name}} will call you"
+  },
+  "requests": {
+    "title": "My requests",
+    "active": "Active",
+    "closed": "Closed",
+    "empty": "You haven't requested blood. We hope you never need to.",
+    "again": "Request again"
+  },
+  "share": {
+    "title": "Share your request",
+    "addMyNumber": "Add my number to the shared text",
+    "template": "URGENT: {{units}} bag {{group}} {{component}} needed at {{hospital}}, {{area}} by {{time}}. If you can donate, tap: {{link}}"
+  },
+  "confirm": {
+    "title": "Did the donation happen?",
+    "yes": "Yes, donated",
+    "no": "No",
+    "notYet": "Not yet",
+    "cooldownNote": "If you donated, we'll pause your alerts until it's safe to donate again.",
+    "thanks": "Thank you — you've helped save a life."
+  },
+  "donor": {
+    "intro": {
+      "title": "Become a blood donor",
+      "b1": "You'll only be alerted when someone nearby needs your blood group.",
+      "b2": "Your number is never public. It's shared only with a family you agree to help.",
+      "b3": "You decide every time — and you can pause anytime.",
+      "cta": "Become a donor"
+    },
+    "available": "Available",
+    "paused": "Paused until {{date}}",
+    "unavailable": "Not available",
+    "eligibleNow": "You can donate now",
+    "eligibleAgain": "You can donate again from {{date}}",
+    "notLive": {
+      "phone": "Verify your number to start receiving requests.",
+      "group": "Add your blood group to start receiving requests.",
+      "consent": "Please review the updated consent to keep receiving requests."
+    },
+    "alertsOff": "Alerts may not reach you. Fix it in 1 minute.",
+    "setup": {
+      "title": "Become a donor",
+      "step": "Step {{n}} of 4",
+      "groupTitle": "What is your blood group?",
+      "unknownGroup": "No problem. Many hospitals and blood banks test blood groups for free or at low cost. Add your group here when you know it.",
+      "whereTitle": "Where do you usually stay?",
+      "locationOnce": "Use my location once",
+      "locationNote": "We only use it to pick your area. We don't store your location.",
+      "travel": "I can travel to",
+      "travelThana": "Hospitals in my thana/upazila",
+      "travelDistrict": "Hospitals anywhere in my district",
+      "institution": "University / college / workplace (optional)",
+      "historyTitle": "Your last donation",
+      "genderWhy": "Used only to calculate when you can donate again.",
+      "never": "I have never donated",
+      "check50kg": "I weigh at least 50 kg",
+      "checkHealth": "I am in good health",
+      "checkScreening": "I understand the blood bank will check me before I donate",
+      "platelets": "I'm willing to donate platelets (for dengue and other patients)",
+      "plateletsInfo": "Platelet donation uses a machine at a blood bank and takes about 1–2 hours. You'll only get platelet requests if you turn this on.",
+      "privacyTitle": "How your number is shared",
+      "privacyBody": "When you tap \"I can help\" and are confirmed, you and the family see each other's number. Nobody else does.",
+      "callMode": "Don't share my number — I'll call families myself",
+      "consentHealth": "I agree that UDVASITO stores my blood group, donation dates and area to match me with requests, and shares my number only as described above.",
+      "finish": "Start receiving requests",
+      "done": "You're a donor now. Thank you! We'll alert you only when you can help."
+    }
+  },
+  "alerts": {
+    "title": "Requests for you",
+    "needsAnswer": "Needs your answer",
+    "saidYes": "You said yes",
+    "earlier": "Earlier",
+    "empty": "No requests right now. We'll alert you when someone nearby needs your help.",
+    "closedItem": "No longer needed"
+  },
+  "alert": {
+    "title": "{{group}} {{component}} needed",
+    "distance": "{{km}} km away",
+    "neededBy": "Needed by {{time}}",
+    "trackRecord": "Requester: member since {{date}} · {{requests}} requests · {{donations}} donations confirmed",
+    "unverified": "Phone not yet verified",
+    "verified": "Hospital slip verified",
+    "canHelp": "I can help",
+    "cantHelp": "Can't this time",
+    "selfCheck": "I feel well today, weigh at least 50 kg and haven't donated recently.",
+    "confirmed": "You're confirmed. Please contact the family now.",
+    "confirmedCallMode": "You chose to call them yourself — they can't see your number.",
+    "standby": "Thank you! Enough donors have said yes for now. You're on standby — we'll tell you right away if you're needed.",
+    "stillComing": "Still coming to {{hospital}}?",
+    "onMyWay": "Yes, on my way",
+    "cantMakeIt": "I can't make it anymore",
+    "cantMakeItConfirm": "We'll tell the family and find another donor. Thank you for letting us know.",
+    "directions": "Directions",
+    "declineReason": "Why not? (optional)",
+    "reason": {
+      "busy": "Busy",
+      "far": "Too far",
+      "donated": "Donated recently",
+      "unwell": "Not feeling well",
+      "other": "Other"
+    }
+  },
+  "donorSettings": {
+    "title": "Alert & privacy settings",
+    "volunteersMayCall": "Volunteers may call me directly in an emergency",
+    "verifiedOnly": "Only alert me for verified requests",
+    "maxAlerts": "Maximum alerts per day",
+    "quietHours": "Quiet hours",
+    "urgentOverride": "Urgent requests may still reach me during quiet hours",
+    "hide": "Hide my donor profile",
+    "hideConfirm": "You won't receive any requests until you show it again.",
+    "rareTip": "Rare group? Limits help you stay active for longer without burning out."
+  },
+  "alertGuide": {
+    "title": "Make sure alerts reach you",
+    "notifications": "Notifications allowed",
+    "battery": "Battery saver won't block UDVASITO",
+    "test": "Send me a test alert",
+    "testSent": "Test alert sent. Did it arrive?",
+    "ios": "On iPhone, alerts work only after you add UDVASITO to your Home Screen (Share → Add to Home Screen)."
+  },
+  "report": {
+    "title": "Report a problem",
+    "fake": "Fake request",
+    "money": "Asked for money",
+    "harassment": "Harassment",
+    "other": "Other",
+    "details": "What happened? (optional)",
+    "block": "Block this person",
+    "send": "Send report",
+    "thanks": "Thank you. Our team will review this quickly."
+  },
+  "settings": {
+    "title": "Settings",
+    "signOut": "Sign out",
+    "phoneChangeNote": "Changing your number needs a new verification."
+  },
+  "myData": {
+    "who": "Who has my number",
+    "whoEmpty": "Nobody has your number through UDVASITO.",
+    "download": "Download my data",
+    "delete": "Delete my account",
+    "deleteBody": "We'll remove your name, number, date of birth, donor details and requests' personal details within 30 days. Anonymous counts (e.g. 'one B+ donation in Chattogram') stay.",
+    "typeToConfirm": "Type DELETE to confirm"
+  },
+  "assistant": {
+    "title": "Can I donate?",
+    "banner": "Answers come from our reviewed FAQ. Please don't type personal details. For anything about your own health, ask a doctor.",
+    "askDoctor": "That's a question about your own health — please ask a doctor or the blood bank. They can check you properly.",
+    "noMatch": "I couldn't find that in our FAQ. Try the questions below or ask a volunteer.",
+    "limit": "You've reached today's limit of {{n}} questions. Browse the FAQ below."
+  },
+  "volunteer": {
+    "apply": {
+      "title": "Become a volunteer",
+      "body": "Volunteers help families when no donor answers fast. You choose when you're on duty.",
+      "areas": "Areas you can help with",
+      "why": "Why do you want to volunteer?",
+      "consent": "While I'm on duty, my first name and phone number may be shown to people requesting blood in my areas.",
+      "submit": "Send application",
+      "pending": "Application received. An admin will review it soon.",
+      "rejected": "Your application wasn't approved: {{reason}}"
+    },
+    "title": "Volunteer",
+    "onDuty": "I'm on duty",
+    "dutyNote": "While on duty, families in your areas may see your number after 30 seconds without a donor.",
+    "board": "Open requests",
+    "waiting": "Waiting {{min}} min",
+    "unclaimed": "Unclaimed",
+    "claimedBy": "{{name}} is on it",
+    "boardEmpty": "No open requests in your areas. Thank you for being on duty.",
+    "claim": "I'm on it",
+    "unclaim": "Release",
+    "findDonors": "Find donors",
+    "ask": "Ask",
+    "asked": "Asked",
+    "canBeCalled": "Can be called",
+    "reveal": "Reveal number",
+    "revealReason": "Why do you need to call? (required)",
+    "noResults": "No matching donors found. Try a wider area or call the blood banks.",
+    "searchLimit": "Search limit reached. Try again in a few minutes."
+  },
+  "slips": {
+    "title": "Slip checks",
+    "approve": "Looks genuine — verify",
+    "reject": "Can't verify",
+    "empty": "No slips waiting."
+  },
+  "verifyInPerson": {
+    "title": "Verify someone in person",
+    "body": "Use this only when the person is with you.",
+    "code": "Their 6-character code",
+    "check": "Ask {{name}} to call your phone now. Reject the call, then check that the number ends in {{last4}}.",
+    "matches": "It matches",
+    "noMatch": "It doesn't match",
+    "deleteCall": "Please delete this call from your call list.",
+    "done": "{{name}}'s number is verified.",
+    "failed": "Not verified. Ask them to check the number they entered.",
+    "count": "{{n}} of {{max}} verifications today"
+  },
+  "volunteerPost": {
+    "label": "Posted by a volunteer from a public post",
+    "sourceNote": "Only use posts the family made public."
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "liveNow": "Live now",
+    "waiting15": "Waiting over 15 min",
+    "bloodPool": "Donor pool by blood group",
+    "speed": "Speed",
+    "funnel": "From request to donation",
+    "responseRate": "{{pct}}% of contacts answered 'Did it happen?'",
+    "coverage": "Volunteer coverage",
+    "people": "People",
+    "applications": "Volunteer applications",
+    "approve": "Approve",
+    "reject": "Reject",
+    "ai": "AI controls",
+    "aiOff": "Off — the app uses the non-AI version",
+    "usage": "Free-tier usage",
+    "usageWarn": "Above 70% — plan ahead",
+    "usageCritical": "Above 90% — act now",
+    "demo": "Practice area",
+    "demoNote": "Practice requests only reach practice accounts. Everything else is the real platform. Practice data is never counted in real numbers.",
+    "practicePinOnce": "Write this PIN down now — it won't be shown again."
+  },
+  "landing": {
+    "hero": "One request. The right donor. Minutes, not hours.",
+    "sub": "Free, bilingual blood-donor network for Bangladesh — starting in Chattogram. Your number is never public.",
+    "how1": "Post one request — type, speak or paste",
+    "how2": "Matching donors nearby are alerted in seconds",
+    "how3": "A volunteer steps in if nobody answers in 30 seconds",
+    "how4": "Numbers are shared only when a donor says yes"
+  },
+  "validation": {
+    "val01": {
+      "empty": "Please enter your name.",
+      "short": "Name must be at least 2 letters.",
+      "long": "Name can be at most 60 characters.",
+      "chars": "Use letters only (no numbers or symbols)."
+    },
+    "val02": {
+      "empty": "Please enter your date of birth.",
+      "invalid": "Please enter a real date.",
+      "over100": "Please check the year."
+    },
+    "val03": {
+      "empty": "Please enter a mobile number.",
+      "invalid": "Enter a Bangladeshi mobile number like 01712345678."
+    },
+    "val04": {
+      "empty": "Please choose a blood group (or 'Not sure')."
+    },
+    "val05": {
+      "combo": "Platelets need a specific blood group or 'Not sure'."
+    },
+    "val06": {
+      "range": "Choose between 1 and 10 bags."
+    },
+    "val07": {
+      "empty": "Please choose where blood is needed.",
+      "placeText": "Please write the place name."
+    },
+    "val08": {
+      "past": "This time has already passed. Choose 'Now' or a later time.",
+      "far": "Requests can be at most 30 days ahead."
+    },
+    "val09": {
+      "long": "Patient's name can be at most 60 characters."
+    },
+    "val10": {
+      "long": "Ward/bed can be at most 40 characters."
+    },
+    "val11": {
+      "phone": "Please don't put phone numbers in the note — donors get your contact number after they agree.",
+      "long": "Note can be at most 300 characters."
+    },
+    "val12": {
+      "type": "Please choose a photo (JPG or PNG).",
+      "size": "This photo is too large. Please take a new photo."
+    },
+    "val13": {
+      "short": "Please write a little more (at least 5 characters).",
+      "long": "Text is too long — keep it under 2,000 characters."
+    },
+    "val14a": {
+      "message": "Please choose your district and thana/upazila."
+    },
+    "val14b": {
+      "missing": "Please enter your last donation date or tick 'I have never donated'.",
+      "future": "This date is in the future."
+    },
+    "val14c": {
+      "message": "Please confirm all three to become a donor."
+    },
+    "val14d": {
+      "message": "Please choose an option."
+    },
+    "val15": {
+      "message": "Please tick the box to continue."
+    },
+    "val16": {
+      "areas": "Choose at least one area.",
+      "motivation": "Please write 10 to 300 characters."
+    },
+    "val17": {
+      "reason": "Please choose a reason.",
+      "long": "Details can be at most 500 characters."
+    },
+    "val18": {
+      "message": "Please give a reason (5 to 200 characters)."
+    },
+    "val19": {
+      "message": "Value must be between {{min}} and {{max}}."
+    },
+    "val20": {
+      "message": "Choose a date between tomorrow and 6 months from now."
+    },
+    "val21": {
+      "message": "Please ask in 3 to 300 characters."
+    },
+    "val22": {
+      "message": "Keep it under 80 characters."
+    },
+    "val23": {
+      "message": "Keep it under 80 characters."
+    },
+    "val24": {
+      "message": "Both English and Bangla are required before approval."
+    },
+    "val25": {
+      "message": "Type the word exactly to confirm."
+    },
+    "val26": {
+      "message": "Enter the 6-character code from their screen."
+    },
+    "val27": {
+      "message": "Check the Practice ID and PIN on your card."
+    },
+    "summary": "Please fix {{count}} thing(s) above."
+  },
+  "notifications": {
+    "NTF-01": {
+      "title": "{{urgent}}{{group}} {{component}} needed · {{hospital}}",
+      "urgentPrefix": "URGENT · ",
+      "body": "{{units}} bag(s) by {{time}} · {{km}} km. Tap to answer."
+    },
+    "NTF-02": {
+      "title": "A volunteer asked you: {{group}} {{component}} · {{hospital}}",
+      "body": "{{units}} bag(s) by {{time}} · {{km}} km. Tap to answer."
+    },
+    "NTF-03": {
+      "title": "New request in {{area}}: {{group}} {{component}}",
+      "body": "{{hospital}} · needed by {{time}}"
+    },
+    "NTF-04": {
+      "title": "{{name}} can donate!",
+      "body": "Open UDVASITO to call them now.",
+      "bodyDonorCalls": "{{name}} will call you soon."
+    },
+    "NTF-05": {
+      "title": "Your number was shared with a family",
+      "body": "{{group}} at {{hospital}} — they may call you."
+    },
+    "NTF-06": {
+      "title": "A volunteer can help you now",
+      "body": "Open UDVASITO to call them."
+    },
+    "NTF-07": {
+      "title": "No donor yet: {{group}} at {{hospital}}",
+      "body": "Waiting {{min}} min. Can you help?"
+    },
+    "NTF-08": {
+      "title": "Still coming to {{hospital}}?",
+      "body": "Tap to answer — the family is waiting."
+    },
+    "NTF-09": {
+      "title": "No longer needed — thank you",
+      "body": "The {{group}} request at {{hospital}} has been arranged."
+    },
+    "NTF-10": {
+      "title": "Did the donation happen?",
+      "body": "One tap helps us count real donations."
+    },
+    "NTF-11": {
+      "title": "You can donate again from today",
+      "body": "Thank you for staying ready."
+    },
+    "NTF-12": {
+      "title": "Still available to donate?",
+      "body": "Tap to confirm in one second."
+    },
+    "NTF-13": {
+      "title": "Your pause has ended",
+      "body": "You'll receive requests again."
+    },
+    "NTF-14": {
+      "title": "Message from UDVASITO",
+      "body": "{{action}}: {{reason}}"
+    },
+    "NTF-15": {
+      "title": "Volunteer application approved",
+      "titleRejected": "Volunteer application update",
+      "body": "Open UDVASITO to start."
+    },
+    "NTF-16": {
+      "title": "You're now confirmed: {{group}} at {{hospital}}",
+      "body": "Please contact the family now."
+    },
+    "NTF-17": {
+      "title": "New item to review",
+      "body": "{{kind}}"
+    },
+    "NTF-18": {
+      "title": "Test alert from UDVASITO",
+      "body": "If you can see this, alerts work."
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "requests": "Requests",
+    "donate": "Donate",
+    "volunteer": "Volunteer",
+    "admin": "Admin",
+    "more": "More"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This page doesn't exist or has been moved.",
+    "home": "Go to Home"
+  }
+}
