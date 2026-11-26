@@ -3,7 +3,21 @@ import { initReactI18next } from "react-i18next";
 import * as Localization from "expo-localization";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import en from "../i18n/en.json";
-import bn from "../i18n/bn.json";
+
+// The Bangla catalogue is loaded lazily (dynamic import): it is ~60 KB
+// of JSON that English-first sessions never need in the initial web
+// bundle (P7/X03). English is bundled as the fallback language. On
+// native the dynamic import resolves from the same binary — behaviour
+// is identical, only the web chunking differs.
+let bnBundle: typeof en | null = null;
+async function ensureBnBundle(): Promise<void> {
+  if (bnBundle) return;
+  const mod = await import("../i18n/bn.json");
+  bnBundle = (mod as { default?: typeof en }).default ?? (mod as typeof en);
+  if (i18n.isInitialized && !i18n.hasResourceBundle("bn", "translation")) {
+    i18n.addResourceBundle("bn", "translation", bnBundle);
+  }
+}
 
 export type AppLanguage = "en" | "bn";
 export const LANGUAGE_STORAGE_KEY = "udvasito.language";
@@ -29,15 +43,20 @@ export async function getStoredLanguage(): Promise<AppLanguage | null> {
 
 export async function setLanguage(lang: AppLanguage): Promise<void> {
   await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+  if (lang === "bn") await ensureBnBundle();
   await i18n.changeLanguage(lang);
 }
 
 export async function initI18n(urlLang?: string | null): Promise<AppLanguage> {
   const stored = await getStoredLanguage();
   const lang = stored ?? detectInitialLanguage(urlLang);
+  if (lang === "bn") await ensureBnBundle();
   if (!i18n.isInitialized) {
     await i18n.use(initReactI18next).init({
-      resources: { en: { translation: en }, bn: { translation: bn } },
+      resources: {
+        en: { translation: en },
+        ...(bnBundle ? { bn: { translation: bnBundle } } : {}),
+      },
       lng: lang,
       fallbackLng: "en",
       interpolation: { escapeValue: false },
